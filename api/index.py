@@ -10,8 +10,6 @@ app = Flask(
     static_folder=os.path.join(BASE, "static")
 )
 
-app = Flask(__name__)
-
 TRAINS = [
     {
         "id": 12631,
