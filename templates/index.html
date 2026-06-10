@@ -3,207 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickRail | Sign In</title>
+    <title>QuickRail — Simpler Train Booking</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Nav ─────────────────────────────────────── */
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 1.1rem 3rem;
             display: flex;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: radial-gradient(circle at 30% 30%, #0f172a 0%, #020617 100%);
+            justify-content: space-between;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(2, 6, 23, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
 
-        /* Ambient blobs */
-        .blob {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(160px);
-            z-index: 0;
-            pointer-events: none;
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: -0.4px;
         }
 
-        .login-card {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 400px;
-            padding: 3rem 2.5rem;
+        .nav-sign-in {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
+            padding: 0.55rem 1.2rem;
+            font-size: 0.85rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-sign-in:hover {
+            color: var(--text-main);
+            border-color: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.04);
+            transform: none;
+            box-shadow: none;
+            filter: none;
+        }
+
+        /* ── Sections ───────────────────────────────── */
+        section {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ── Hero ────────────────────────────────────── */
+        .hero {
+            padding-top: 10rem;
+            padding-bottom: 6rem;
             text-align: center;
         }
 
-        .logo-icon {
+        .hero-badge {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 68px;
-            height: 68px;
-            background: var(--primary-glow);
-            border-radius: 20px;
+            gap: 7px;
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.22);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.4rem, 5vw, 3.8rem);
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            line-height: 1.12;
             margin-bottom: 1.4rem;
+            color: var(--text-main);
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, #6366f1, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            max-width: 560px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.9rem 2.2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 14px;
+        }
+
+        .hero-note {
+            display: block;
+            margin-top: 1rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        /* ── Route strip ─────────────────────────────── */
+        .route-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: wrap;
+            margin: 0 auto;
+            max-width: 640px;
+            padding: 1.4rem 2rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            margin-top: -1rem;
+            margin-bottom: 5rem;
+        }
+        .route-city {
+            text-align: center;
+            padding: 0 1.2rem;
+        }
+        .route-city-name {
+            font-weight: 800;
+            font-size: 0.95rem;
+        }
+        .route-city-dist {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            font-weight: 600;
+        }
+        .route-arrow {
+            color: var(--glass-border);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Problem ─────────────────────────────────── */
+        .problem-section {
+            padding-bottom: 5rem;
+        }
+
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        .problem-card {
+            padding: 1.75rem;
+            border-radius: 20px;
+        }
+
+        .problem-card.bad {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.12);
+        }
+
+        .problem-card.good {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.12);
+        }
+
+        .problem-card h3 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.1rem;
+        }
+
+        .problem-card.bad  h3 { color: var(--danger); }
+        .problem-card.good h3 { color: var(--success); }
+
+        .problem-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 0.85rem;
+            font-size: 0.88rem;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        .problem-item i { flex-shrink: 0; margin-top: 2px; }
+
+        /* ── Stats ───────────────────────────────────── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 5rem;
+        }
+
+        .stat-card {
+            padding: 1.5rem;
+            border-radius: 18px;
+            text-align: center;
+            background: rgba(255,255,255,0.02);
             border: 1px solid var(--glass-border);
         }
 
-        .divider {
-            height: 2px;
-            width: 36px;
-            background: var(--primary);
-            border-radius: 2px;
-            margin: 0.6rem auto 1rem;
+        .stat-num {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #f8fafc, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* ── How it works ────────────────────────────── */
+        .steps-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 5rem;
+        }
+
+        .step-card {
+            padding: 1.75rem;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        .step-num {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--primary-glow);
+            border: 1px solid rgba(99,102,241,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 1.1rem;
+        }
+
+        .step-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-card p {
+            font-size: 0.84rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* ── Login ───────────────────────────────────── */
+        .login-section {
+            padding-bottom: 6rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem;
+            margin-top: 2.5rem;
         }
 
         .input-wrap {
             position: relative;
-            text-align: left;
         }
-
         .input-wrap i {
             position: absolute;
-            left: 14px;
+            left: 13px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-muted);
             pointer-events: none;
         }
-
-        .input-wrap input {
-            padding-left: 44px;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(16, 185, 129, 0.06);
-            padding: 7px 16px;
-            border-radius: 30px;
-            border: 1px solid rgba(16, 185, 129, 0.15);
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--success);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--success);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1);   opacity: 1; }
-            50%       { transform: scale(1.3); opacity: 0.7; }
-        }
+        .input-wrap input { padding-left: 42px; }
 
         .error-msg {
+            font-size: 0.78rem;
             color: var(--danger);
-            font-size: 0.8rem;
             font-weight: 600;
-            margin-top: -6px;
             display: none;
-            text-align: left;
+        }
+
+        /* ── Footer ──────────────────────────────────── */
+        .footer {
+            border-top: 1px solid var(--glass-border);
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        /* ── Ambient blobs ───────────────────────────── */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(160px);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.6; transform: scale(1.3); }
         }
     </style>
-    <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 
-    <!-- Ambient blobs -->
-    <div class="blob" style="width:380px;height:380px; top:8%; left:6%;
-         background:var(--primary); opacity:0.1;"></div>
-    <div class="blob" style="width:320px;height:320px; bottom:10%; right:8%;
-         background:var(--accent); opacity:0.07;"></div>
+<!-- Blobs -->
+<div class="blob" style="width:450px;height:450px;top:0;left:5%;background:var(--primary);opacity:0.09;"></div>
+<div class="blob" style="width:350px;height:350px;bottom:10%;right:5%;background:var(--accent);opacity:0.06;"></div>
+
+<!-- ── Nav ──────────────────────────────────────────── -->
+<nav class="nav">
+    <div class="nav-logo">
+        <i data-lucide="train-front" size="20" style="color:var(--primary);"></i>
+        QuickRail
+    </div>
+    <button class="nav-sign-in" onclick="scrollToLogin()">Sign In</button>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────── -->
+<section class="hero">
+    <div class="hero-badge">
+        <i data-lucide="map-pin" size="12"></i>
+        Chennai · Trichy · Madurai · Tirunelveli
+    </div>
+    <h1>Train booking that<br><span>doesn't need a tutorial.</span></h1>
+    <p class="hero-sub">
+        Finding and booking a train in Tamil Nadu shouldn't take 10 minutes and
+        three wrong turns. QuickRail gets you from search to confirmed ticket in under 60 seconds.
+    </p>
+    <button class="hero-cta" onclick="scrollToLogin()">
+        <i data-lucide="search" size="18"></i> Search trains
+    </button>
+    <span class="hero-note">No account required to search &nbsp;·&nbsp; Free to use</span>
+</section>
+
+<!-- ── Route strip ───────────────────────────────────── -->
+<section>
+    <div class="route-strip">
+        <div class="route-city">
+            <div class="route-city-name">Chennai</div>
+            <div class="route-city-dist">Origin</div>
+        </div>
+        <div class="route-arrow">——</div>
+        <div class="route-city">
+            <div class="route-city-name">Trichy</div>
+            <div class="route-city-dist">340 km</div>
+        </div>
+        <div class="route-arrow">——</div>
+        <div class="route-city">
+            <div class="route-city-name">Madurai</div>
+            <div class="route-city-dist">495 km</div>
+        </div>
+        <div class="route-arrow">——</div>
+        <div class="route-city">
+            <div class="route-city-name">Tirunelveli</div>
+            <div class="route-city-dist">650 km</div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Problem ───────────────────────────────────────── -->
+<section class="problem-section">
+    <div class="section-label">The Problem</div>
+    <h2 style="font-size:1.7rem;font-weight:800;letter-spacing:-0.5px;margin-bottom:0.5rem;">
+        Booking a train is harder than it should be.
+    </h2>
+    <p style="color:var(--text-dim);font-size:0.92rem;max-width:560px;line-height:1.7;">
+        Over 14 million passengers travel on Tamil Nadu's rail network every day.
+        A large number of them still rely on agents to book tickets — paying
+        extra because the official system is too complicated to use on a phone.
+    </p>
+
+    <div class="problem-grid">
+        <div class="problem-card bad">
+            <h3>Today's experience</h3>
+            <div class="problem-item">
+                <i data-lucide="x-circle" size="15" style="color:var(--danger);"></i>
+                IRCTC requires account registration, Aadhaar verification, and captchas before you can even see fares
+            </div>
+            <div class="problem-item">
+                <i data-lucide="x-circle" size="15" style="color:var(--danger);"></i>
+                Pages time out on slow 2G/3G connections common in rural areas
+            </div>
+            <div class="problem-item">
+                <i data-lucide="x-circle" size="15" style="color:var(--danger);"></i>
+                Booking agents charge ₹50–150 extra per ticket as a convenience fee
+            </div>
+            <div class="problem-item">
+                <i data-lucide="x-circle" size="15" style="color:var(--danger);"></i>
+                Elderly and first-time passengers frequently miss trains due to booking confusion
+            </div>
+        </div>
+        <div class="problem-card good">
+            <h3>With QuickRail</h3>
+            <div class="problem-item">
+                <i data-lucide="check-circle" size="15" style="color:var(--success);"></i>
+                Search trains between any two stations in 2 seconds — no login needed
+            </div>
+            <div class="problem-item">
+                <i data-lucide="check-circle" size="15" style="color:var(--success);"></i>
+                Lightweight interface built for slow connections and small screens
+            </div>
+            <div class="problem-item">
+                <i data-lucide="check-circle" size="15" style="color:var(--success);"></i>
+                Pick your seat class, choose your seat, and get an e-ticket instantly
+            </div>
+            <div class="problem-item">
+                <i data-lucide="check-circle" size="15" style="color:var(--success);"></i>
+                Cancel anytime with a 90% refund — no phone calls or counter visits
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Stats ─────────────────────────────────────────── -->
+<section>
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-num">11</div>
+            <div class="stat-label">Trains covered</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">650<span style="font-size:1rem;font-weight:600;">km</span></div>
+            <div class="stat-label">Route length</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">&lt;60<span style="font-size:1rem;font-weight:600;">s</span></div>
+            <div class="stat-label">To book a ticket</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num">3</div>
+            <div class="stat-label">Seat classes</div>
+        </div>
+    </div>
+</section>
+
+<!-- ── How it works ──────────────────────────────────── -->
+<section>
+    <div class="section-label">How it works</div>
+    <h2 style="font-size:1.7rem;font-weight:800;letter-spacing:-0.5px;">Three steps. That's it.</h2>
+
+    <div class="steps-row">
+        <div class="step-card">
+            <div class="step-num">1</div>
+            <h3>Pick your route</h3>
+            <p>Choose your departure station, destination, travel day, and preferred seat class. Results appear instantly.</p>
+        </div>
+        <div class="step-card">
+            <div class="step-num">2</div>
+            <h3>Select your seat</h3>
+            <p>See which seats are available on a visual map. Pick the one you want — no surprises at boarding.</p>
+        </div>
+        <div class="step-card">
+            <div class="step-num">3</div>
+            <h3>Get your e-ticket</h3>
+            <p>Enter your name, phone, and date of birth. Confirm payment and your PNR e-ticket is ready immediately.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── Login ─────────────────────────────────────────── -->
+<section class="login-section" id="login-section">
+    <div class="section-label" style="text-align:center;">Get started</div>
+    <h2 style="font-size:1.7rem;font-weight:800;letter-spacing:-0.5px;text-align:center;">
+        Sign in to book
+    </h2>
+    <p style="color:var(--text-dim);font-size:0.88rem;text-align:center;margin-top:0.5rem;">
+        You can search trains without signing in. Sign in only when you're ready to book.
+    </p>
 
     <div class="glass-card login-card animate-in">
-
-        <!-- Logo -->
-        <div class="logo-icon">
-            <i data-lucide="train-front" size="34" style="color:var(--primary);"></i>
-        </div>
-
-        <h1 style="font-size:1.9rem; font-weight:800; letter-spacing:-0.8px;">
-            QuickRail
-        </h1>
-        <div class="divider"></div>
-        <p style="color:var(--text-dim); font-size:0.8rem; text-transform:uppercase;
-                  letter-spacing:2px; font-weight:600; margin-bottom:2.2rem;">
-            Sign In
-        </p>
-
-        <!-- Form -->
-        <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:2rem;">
-
+        <div style="display:flex;flex-direction:column;gap:13px;">
             <div class="input-wrap">
-                <i data-lucide="user" size="16"></i>
-                <input type="text" id="username" placeholder="Username"
-                       autocomplete="username">
+                <i data-lucide="user" size="15"></i>
+                <input type="text" id="username" placeholder="Username" autocomplete="username">
             </div>
-
             <div class="input-wrap">
-                <i data-lucide="lock" size="16"></i>
-                <input type="password" id="password" placeholder="Password"
-                       autocomplete="current-password">
+                <i data-lucide="lock" size="15"></i>
+                <input type="password" id="password" placeholder="Password" autocomplete="current-password">
             </div>
-
-            <p id="error-msg" class="error-msg">
-                <i data-lucide="alert-circle" size="13"
-                   style="vertical-align:middle; margin-right:4px;"></i>
-                Please enter your username and password.
-            </p>
-
+            <p id="error-msg" class="error-msg">Please enter your username and password.</p>
             <button id="login-btn" onclick="handleLogin()"
-                    style="width:100%; justify-content:center;
-                           padding:1rem; font-size:0.95rem; margin-top:4px;">
-                Sign In <i data-lucide="arrow-right" size="17"></i>
+                    style="width:100%;justify-content:center;padding:0.95rem;font-size:0.95rem;margin-top:4px;">
+                Sign In <i data-lucide="arrow-right" size="16"></i>
             </button>
         </div>
-
-        <!-- Status -->
-        <div style="border-top:1px solid var(--glass-border); padding-top:1.6rem;">
-            <div class="status-badge">
-                <span class="status-dot"></span>
-                <p style="font-size:0.7rem; color:var(--success);
-                          font-weight:700; letter-spacing:1px;">
-                    NETWORK OPERATIONAL
-                </p>
-            </div>
-        </div>
-
+        <p style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:1.25rem;line-height:1.6;">
+            Demo project — use any username and password to sign in.
+        </p>
     </div>
+</section>
 
-    <script>
-        lucide.createIcons();
+<!-- ── Footer ────────────────────────────────────────── -->
+<footer class="footer">
+    <div style="display:flex;align-items:center;gap:9px;">
+        <i data-lucide="train-front" size="15" style="color:var(--primary);"></i>
+        <span style="font-weight:700;color:var(--text-dim);">QuickRail</span>
+        <span>— Built for Tamil Nadu's rail corridor</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+        <span style="width:7px;height:7px;background:var(--success);border-radius:50%;
+                     animation:pulse-dot 2s infinite;"></span>
+        <span>Live</span>
+    </div>
+</footer>
 
-        function handleLogin() {
-            const user = document.getElementById("username").value.trim();
-            const pass = document.getElementById("password").value.trim();
-            const err  = document.getElementById("error-msg");
+<script>
+    lucide.createIcons();
 
-            if (!user || !pass) {
-                err.style.display = "block";
-                lucide.createIcons();
-                document.getElementById(user ? "password" : "username").focus();
-                return;
-            }
+    function scrollToLogin() {
+        document.getElementById("login-section").scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => document.getElementById("username").focus(), 600);
+    }
 
-            err.style.display = "none";
+    function handleLogin() {
+        const user = document.getElementById("username").value.trim();
+        const pass = document.getElementById("password").value.trim();
+        const err  = document.getElementById("error-msg");
 
-            /* Simple visual feedback before redirect */
-            const btn = document.getElementById("login-btn");
-            btn.disabled     = true;
-            btn.style.opacity = "0.7";
-            btn.innerHTML    = `<span style="letter-spacing:1px;">Signing in...</span>`;
-
-            setTimeout(() => { location.href = "/dashboard"; }, 600);
+        if (!user || !pass) {
+            err.style.display = "block";
+            lucide.createIcons();
+            document.getElementById(user ? "password" : "username").focus();
+            return;
         }
+        err.style.display = "none";
 
-        /* Allow Enter key on both fields */
-        ["username", "password"].forEach(id => {
-            document.getElementById(id)
-                .addEventListener("keydown", e => {
-                    if (e.key === "Enter") handleLogin();
-                });
+        const btn = document.getElementById("login-btn");
+        btn.disabled      = true;
+        btn.style.opacity = "0.7";
+        btn.innerHTML     = "Signing in&hellip;";
+        setTimeout(() => { location.href = "/dashboard"; }, 600);
+    }
+
+    ["username","password"].forEach(id => {
+        document.getElementById(id).addEventListener("keydown", e => {
+            if (e.key === "Enter") handleLogin();
         });
-    </script>
+    });
+</script>
 </body>
 </html>
