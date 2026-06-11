@@ -7,464 +7,247 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+        body { min-height: 100vh; overflow-x: hidden; }
 
         /* ── Nav ─────────────────────────────────────── */
         .nav {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 100;
-            padding: 1.1rem 3rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 1rem 3rem;
+            display: flex; align-items: center; justify-content: space-between;
             border-bottom: 1px solid var(--glass-border);
-            background: rgba(2, 6, 23, 0.7);
+            background: rgba(2,6,23,0.72);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
         }
-
         .nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 800;
-            font-size: 1.15rem;
-            letter-spacing: -0.4px;
+            display: flex; align-items: center; gap: 9px;
+            font-weight: 800; font-size: 1.1rem; letter-spacing: -0.4px;
         }
-
-        .nav-sign-in {
-            background: transparent;
-            color: var(--text-dim);
+        .nav-btn {
+            background: transparent; color: var(--text-dim);
             border: 1px solid var(--glass-border);
-            padding: 0.55rem 1.2rem;
-            font-size: 0.85rem;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
+            padding: 0.5rem 1.1rem; font-size: 0.83rem;
+            border-radius: 10px; cursor: pointer; transition: all .2s;
         }
-        .nav-sign-in:hover {
-            color: var(--text-main);
-            border-color: rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.04);
-            transform: none;
-            box-shadow: none;
-            filter: none;
+        .nav-btn:hover {
+            color: var(--text-main); border-color: rgba(255,255,255,.2);
+            background: rgba(255,255,255,.04);
+            transform: none; box-shadow: none; filter: none;
         }
 
-        /* ── Sections ───────────────────────────────── */
-        section {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
+        /* ── Sections ────────────────────────────────── */
+        section { max-width: 1020px; margin: 0 auto; padding: 0 2rem; }
 
         /* ── Hero ────────────────────────────────────── */
-        .hero {
-            padding-top: 10rem;
-            padding-bottom: 6rem;
-            text-align: center;
-        }
-
+        .hero { padding-top: 9.5rem; padding-bottom: 5rem; text-align: center; }
         .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            background: rgba(99,102,241,0.1);
-            border: 1px solid rgba(99,102,241,0.22);
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--primary);
-            letter-spacing: 0.5px;
-            margin-bottom: 2rem;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(99,102,241,.1); border: 1px solid rgba(99,102,241,.22);
+            padding: 5px 13px; border-radius: 30px;
+            font-size: 0.73rem; font-weight: 700; color: var(--primary);
+            letter-spacing: .5px; margin-bottom: 1.8rem;
         }
-
         .hero h1 {
-            font-size: clamp(2.4rem, 5vw, 3.8rem);
-            font-weight: 800;
-            letter-spacing: -1.5px;
-            line-height: 1.12;
-            margin-bottom: 1.4rem;
-            color: var(--text-main);
+            font-size: clamp(2.2rem,5vw,3.6rem); font-weight: 800;
+            letter-spacing: -1.5px; line-height: 1.12; margin-bottom: 1.3rem;
         }
-
         .hero h1 span {
-            background: linear-gradient(135deg, #6366f1, #22d3ee);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            background: linear-gradient(135deg,#6366f1,#22d3ee);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
         .hero-sub {
-            font-size: 1.05rem;
-            color: var(--text-dim);
-            max-width: 560px;
-            margin: 0 auto 2.5rem;
-            line-height: 1.7;
+            font-size: 1rem; color: var(--text-dim); max-width: 540px;
+            margin: 0 auto 2.2rem; line-height: 1.7;
         }
-
         .hero-cta {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 0.9rem 2.2rem;
-            font-size: 1rem;
-            font-weight: 700;
-            border-radius: 14px;
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: .85rem 2rem; font-size: .95rem; font-weight: 700;
+            border-radius: 13px;
         }
-
-        .hero-note {
-            display: block;
-            margin-top: 1rem;
-            font-size: 0.78rem;
-            color: var(--text-muted);
-        }
+        .hero-note { display: block; margin-top: .9rem; font-size: .76rem; color: var(--text-muted); }
 
         /* ── Route strip ─────────────────────────────── */
         .route-strip {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            flex-wrap: wrap;
-            margin: 0 auto;
-            max-width: 640px;
-            padding: 1.4rem 2rem;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--glass-border);
-            border-radius: 18px;
-            margin-top: -1rem;
-            margin-bottom: 5rem;
+            display: flex; align-items: center; justify-content: center;
+            flex-wrap: wrap; max-width: 620px; margin: -0.5rem auto 4.5rem;
+            padding: 1.25rem 2rem;
+            background: rgba(255,255,255,.02);
+            border: 1px solid var(--glass-border); border-radius: 16px;
         }
-        .route-city {
-            text-align: center;
-            padding: 0 1.2rem;
-        }
-        .route-city-name {
-            font-weight: 800;
-            font-size: 0.95rem;
-        }
-        .route-city-dist {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-            font-weight: 600;
-        }
-        .route-arrow {
-            color: var(--glass-border);
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
+        .route-city { text-align: center; padding: 0 1rem; }
+        .route-city-name { font-weight: 800; font-size: .9rem; }
+        .route-city-dist { font-size: .62rem; color: var(--text-muted); margin-top: 2px; font-weight: 600; }
+        .route-arrow { color: var(--glass-border); font-size: 1.1rem; flex-shrink: 0; }
 
         /* ── Problem ─────────────────────────────────── */
-        .problem-section {
-            padding-bottom: 5rem;
-        }
-
         .section-label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--primary);
-            margin-bottom: 1rem;
+            font-size: .7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--primary); margin-bottom: .9rem;
         }
-
-        .problem-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-top: 2.5rem;
-        }
-
-        .problem-card {
-            padding: 1.75rem;
-            border-radius: 20px;
-        }
-
-        .problem-card.bad {
-            background: rgba(239, 68, 68, 0.05);
-            border: 1px solid rgba(239, 68, 68, 0.12);
-        }
-
-        .problem-card.good {
-            background: rgba(16, 185, 129, 0.05);
-            border: 1px solid rgba(16, 185, 129, 0.12);
-        }
-
-        .problem-card h3 {
-            font-size: 0.78rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 1.1rem;
-        }
-
+        .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-top: 2.25rem; }
+        .problem-card { padding: 1.6rem; border-radius: 18px; }
+        .problem-card.bad  { background: rgba(239,68,68,.05);   border: 1px solid rgba(239,68,68,.12); }
+        .problem-card.good { background: rgba(16,185,129,.05);  border: 1px solid rgba(16,185,129,.12); }
+        .problem-card h3   { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
         .problem-card.bad  h3 { color: var(--danger); }
         .problem-card.good h3 { color: var(--success); }
-
         .problem-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 0.85rem;
-            font-size: 0.88rem;
-            color: var(--text-dim);
-            line-height: 1.5;
+            display: flex; align-items: flex-start; gap: 9px;
+            margin-bottom: .8rem; font-size: .86rem; color: var(--text-dim); line-height: 1.5;
         }
-
         .problem-item i { flex-shrink: 0; margin-top: 2px; }
 
         /* ── Stats ───────────────────────────────────── */
         .stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.25rem;
-            margin-bottom: 5rem;
+            display: grid; grid-template-columns: repeat(4,1fr);
+            gap: 1.1rem; margin-bottom: 4.5rem;
         }
-
         .stat-card {
-            padding: 1.5rem;
-            border-radius: 18px;
-            text-align: center;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--glass-border);
+            padding: 1.4rem; border-radius: 16px; text-align: center;
+            background: rgba(255,255,255,.02); border: 1px solid var(--glass-border);
         }
-
         .stat-num {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -1px;
-            background: linear-gradient(135deg, #f8fafc, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.9rem; font-weight: 800; letter-spacing: -1px;
+            background: linear-gradient(135deg,#f8fafc,#94a3b8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            margin-top: 4px;
-        }
+        .stat-label { font-size: .72rem; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
 
         /* ── How it works ────────────────────────────── */
-        .steps-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-top: 2.5rem;
-            margin-bottom: 5rem;
-        }
-
-        .step-card {
-            padding: 1.75rem;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--glass-border);
-            position: relative;
-        }
-
+        .steps-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.4rem; margin-top: 2.25rem; margin-bottom: 4.5rem; }
+        .step-card { padding: 1.6rem; border-radius: 18px; background: rgba(255,255,255,.02); border: 1px solid var(--glass-border); }
         .step-num {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            background: var(--primary-glow);
-            border: 1px solid rgba(99,102,241,0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 1.1rem;
+            width: 32px; height: 32px; border-radius: 9px;
+            background: var(--primary-glow); border: 1px solid rgba(99,102,241,.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: .78rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;
+        }
+        .step-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: .45rem; }
+        .step-card p  { font-size: .82rem; color: var(--text-dim); line-height: 1.6; }
+
+        /* ── Auth card ───────────────────────────────── */
+        .auth-section { padding-bottom: 5.5rem; display: flex; flex-direction: column; align-items: center; }
+        .auth-card { width: 100%; max-width: 420px; padding: 2.25rem; margin-top: 2.25rem; }
+
+        /* Tabs */
+        .auth-tabs { display: flex; border-bottom: 1px solid var(--glass-border); margin-bottom: 1.6rem; }
+        .auth-tab {
+            flex: 1; padding: .75rem; text-align: center;
+            font-size: .85rem; font-weight: 700; color: var(--text-muted);
+            cursor: pointer; border-bottom: 2px solid transparent;
+            transition: color .2s, border-color .2s; margin-bottom: -1px;
+        }
+        .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* Input with icon */
+        .iw { position: relative; }
+        .iw i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+        .iw input { padding-left: 40px; }
+
+        .auth-err {
+            font-size: .77rem; color: var(--danger); font-weight: 600;
+            display: none; padding: .5rem .75rem;
+            background: rgba(239,68,68,.08); border-radius: 8px;
+            border: 1px solid rgba(239,68,68,.15);
         }
 
-        .step-card h3 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .step-card p {
-            font-size: 0.84rem;
-            color: var(--text-dim);
-            line-height: 1.6;
-        }
-
-        /* ── Login ───────────────────────────────────── */
-        .login-section {
-            padding-bottom: 6rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 400px;
-            padding: 2.5rem;
-            margin-top: 2.5rem;
-        }
-
-        .input-wrap {
-            position: relative;
-        }
-        .input-wrap i {
-            position: absolute;
-            left: 13px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            pointer-events: none;
-        }
-        .input-wrap input { padding-left: 42px; }
-
-        .error-msg {
-            font-size: 0.78rem;
-            color: var(--danger);
-            font-weight: 600;
-            display: none;
+        /* ── Demo mode banner ────────────────────────── */
+        .demo-banner {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2);
+            border-radius: 10px; padding: .65rem .9rem;
+            font-size: .76rem; color: #fbbf24; font-weight: 600; margin-bottom: 1.1rem;
         }
 
         /* ── Footer ──────────────────────────────────── */
         .footer {
             border-top: 1px solid var(--glass-border);
-            padding: 2rem 3rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.78rem;
-            color: var(--text-muted);
+            padding: 1.75rem 3rem;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: .76rem; color: var(--text-muted);
         }
 
-        /* ── Ambient blobs ───────────────────────────── */
-        .blob {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(160px);
-            z-index: -1;
-            pointer-events: none;
-        }
+        /* Blobs */
+        .blob { position: fixed; border-radius: 50%; filter: blur(160px); z-index: -1; pointer-events: none; }
 
         @keyframes pulse-dot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%       { opacity: 0.6; transform: scale(1.3); }
+            0%,100% { opacity:1; transform:scale(1); }
+            50%      { opacity:.6; transform:scale(1.3); }
         }
     </style>
 </head>
 <body>
 
-<!-- Blobs -->
-<div class="blob" style="width:450px;height:450px;top:0;left:5%;background:var(--primary);opacity:0.09;"></div>
-<div class="blob" style="width:350px;height:350px;bottom:10%;right:5%;background:var(--accent);opacity:0.06;"></div>
+<div class="blob" style="width:440px;height:440px;top:0;left:4%;background:var(--primary);opacity:.09;"></div>
+<div class="blob" style="width:340px;height:340px;bottom:8%;right:4%;background:var(--accent);opacity:.06;"></div>
 
 <!-- ── Nav ──────────────────────────────────────────── -->
 <nav class="nav">
     <div class="nav-logo">
-        <i data-lucide="train-front" size="20" style="color:var(--primary);"></i>
+        <i data-lucide="train-front" size="19" style="color:var(--primary);"></i>
         QuickRail
     </div>
-    <button class="nav-sign-in" onclick="scrollToLogin()">Sign In</button>
+    <button class="nav-btn" onclick="scrollToAuth()">Sign In</button>
 </nav>
 
 <!-- ── Hero ─────────────────────────────────────────── -->
 <section class="hero">
     <div class="hero-badge">
-        <i data-lucide="map-pin" size="12"></i>
+        <i data-lucide="map-pin" size="11"></i>
         Chennai · Trichy · Madurai · Tirunelveli
     </div>
     <h1>Train booking that<br><span>doesn't need a tutorial.</span></h1>
     <p class="hero-sub">
-        Finding and booking a train in Tamil Nadu shouldn't take 10 minutes and
-        three wrong turns. QuickRail gets you from search to confirmed ticket in under 60 seconds.
+        Finding and booking a train in Tamil Nadu shouldn't take 10 minutes
+        and three wrong turns. QuickRail gets you from search to confirmed
+        ticket in under 60 seconds.
     </p>
-    <button class="hero-cta" onclick="scrollToLogin()">
-        <i data-lucide="search" size="18"></i> Search trains
+    <button class="hero-cta" onclick="scrollToAuth()">
+        <i data-lucide="search" size="17"></i> Search trains
     </button>
-    <span class="hero-note">No account required to search &nbsp;·&nbsp; Free to use</span>
+    <span class="hero-note">Free to use &nbsp;·&nbsp; Secure payments via Razorpay</span>
 </section>
 
 <!-- ── Route strip ───────────────────────────────────── -->
 <section>
     <div class="route-strip">
-        <div class="route-city">
-            <div class="route-city-name">Chennai</div>
-            <div class="route-city-dist">Origin</div>
-        </div>
+        <div class="route-city"><div class="route-city-name">Chennai</div><div class="route-city-dist">Origin</div></div>
         <div class="route-arrow">——</div>
-        <div class="route-city">
-            <div class="route-city-name">Trichy</div>
-            <div class="route-city-dist">340 km</div>
-        </div>
+        <div class="route-city"><div class="route-city-name">Trichy</div><div class="route-city-dist">340 km</div></div>
         <div class="route-arrow">——</div>
-        <div class="route-city">
-            <div class="route-city-name">Madurai</div>
-            <div class="route-city-dist">495 km</div>
-        </div>
+        <div class="route-city"><div class="route-city-name">Madurai</div><div class="route-city-dist">495 km</div></div>
         <div class="route-arrow">——</div>
-        <div class="route-city">
-            <div class="route-city-name">Tirunelveli</div>
-            <div class="route-city-dist">650 km</div>
-        </div>
+        <div class="route-city"><div class="route-city-name">Tirunelveli</div><div class="route-city-dist">650 km</div></div>
     </div>
 </section>
 
 <!-- ── Problem ───────────────────────────────────────── -->
-<section class="problem-section">
+<section style="padding-bottom:4.5rem;">
     <div class="section-label">The Problem</div>
-    <h2 style="font-size:1.7rem;font-weight:800;letter-spacing:-0.5px;margin-bottom:0.5rem;">
+    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;margin-bottom:.45rem;">
         Booking a train is harder than it should be.
     </h2>
-    <p style="color:var(--text-dim);font-size:0.92rem;max-width:560px;line-height:1.7;">
+    <p style="color:var(--text-dim);font-size:.9rem;max-width:540px;line-height:1.7;">
         Over 14 million passengers travel on Tamil Nadu's rail network every day.
-        A large number of them still rely on agents to book tickets — paying
-        extra because the official system is too complicated to use on a phone.
+        Many still rely on agents to book — paying extra because the official
+        system is too complicated on a phone.
     </p>
-
     <div class="problem-grid">
         <div class="problem-card bad">
             <h3>Today's experience</h3>
-            <div class="problem-item">
-                <i data-lucide="x-circle" size="15" style="color:var(--danger);"></i>
-                IRCTC requires account registration, Aadhaar verification, and captchas before you can even see fares
-            </div>
-            <div class="problem-item">
-                <i data-lucide="x-circle" size="15" style="color:var(--danger);"></i>
-                Pages time out on slow 2G/3G connections common in rural areas
-            </div>
-            <div class="problem-item">
-                <i data-lucide="x-circle" size="15" style="color:var(--danger);"></i>
-                Booking agents charge ₹50–150 extra per ticket as a convenience fee
-            </div>
-            <div class="problem-item">
-                <i data-lucide="x-circle" size="15" style="color:var(--danger);"></i>
-                Elderly and first-time passengers frequently miss trains due to booking confusion
-            </div>
+            <div class="problem-item"><i data-lucide="x-circle" size="14" style="color:var(--danger);"></i>Account registration, Aadhaar verification, and captchas before you can see a single fare</div>
+            <div class="problem-item"><i data-lucide="x-circle" size="14" style="color:var(--danger);"></i>Pages time out on 2G/3G connections common in rural areas</div>
+            <div class="problem-item"><i data-lucide="x-circle" size="14" style="color:var(--danger);"></i>Agents charge ₹50–150 extra per ticket as a convenience fee</div>
+            <div class="problem-item"><i data-lucide="x-circle" size="14" style="color:var(--danger);"></i>No clear seat map — you don't know where you'll sit until boarding</div>
         </div>
         <div class="problem-card good">
             <h3>With QuickRail</h3>
-            <div class="problem-item">
-                <i data-lucide="check-circle" size="15" style="color:var(--success);"></i>
-                Search trains between any two stations in 2 seconds — no login needed
-            </div>
-            <div class="problem-item">
-                <i data-lucide="check-circle" size="15" style="color:var(--success);"></i>
-                Lightweight interface built for slow connections and small screens
-            </div>
-            <div class="problem-item">
-                <i data-lucide="check-circle" size="15" style="color:var(--success);"></i>
-                Pick your seat class, choose your seat, and get an e-ticket instantly
-            </div>
-            <div class="problem-item">
-                <i data-lucide="check-circle" size="15" style="color:var(--success);"></i>
-                Cancel anytime with a 90% refund — no phone calls or counter visits
-            </div>
+            <div class="problem-item"><i data-lucide="check-circle" size="14" style="color:var(--success);"></i>Search any route in 2 seconds — no login needed to browse</div>
+            <div class="problem-item"><i data-lucide="check-circle" size="14" style="color:var(--success);"></i>Lightweight, fast on slow connections</div>
+            <div class="problem-item"><i data-lucide="check-circle" size="14" style="color:var(--success);"></i>Visual seat map — pick exactly where you sit</div>
+            <div class="problem-item"><i data-lucide="check-circle" size="14" style="color:var(--success);"></i>Pay securely with UPI, card, or netbanking. Cancel anytime.</div>
         </div>
     </div>
 </section>
@@ -472,85 +255,107 @@
 <!-- ── Stats ─────────────────────────────────────────── -->
 <section>
     <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-num">11</div>
-            <div class="stat-label">Trains covered</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num">650<span style="font-size:1rem;font-weight:600;">km</span></div>
-            <div class="stat-label">Route length</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num">&lt;60<span style="font-size:1rem;font-weight:600;">s</span></div>
-            <div class="stat-label">To book a ticket</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num">3</div>
-            <div class="stat-label">Seat classes</div>
-        </div>
+        <div class="stat-card"><div class="stat-num">11</div><div class="stat-label">Trains covered</div></div>
+        <div class="stat-card"><div class="stat-num">650<span style="font-size:.95rem;font-weight:600;">km</span></div><div class="stat-label">Route length</div></div>
+        <div class="stat-card"><div class="stat-num">&lt;60<span style="font-size:.95rem;font-weight:600;">s</span></div><div class="stat-label">To book a ticket</div></div>
+        <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Seat classes</div></div>
     </div>
 </section>
 
 <!-- ── How it works ──────────────────────────────────── -->
 <section>
     <div class="section-label">How it works</div>
-    <h2 style="font-size:1.7rem;font-weight:800;letter-spacing:-0.5px;">Three steps. That's it.</h2>
-
+    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;">Three steps. That's it.</h2>
     <div class="steps-row">
-        <div class="step-card">
-            <div class="step-num">1</div>
-            <h3>Pick your route</h3>
-            <p>Choose your departure station, destination, travel day, and preferred seat class. Results appear instantly.</p>
-        </div>
-        <div class="step-card">
-            <div class="step-num">2</div>
-            <h3>Select your seat</h3>
-            <p>See which seats are available on a visual map. Pick the one you want — no surprises at boarding.</p>
-        </div>
-        <div class="step-card">
-            <div class="step-num">3</div>
-            <h3>Get your e-ticket</h3>
-            <p>Enter your name, phone, and date of birth. Confirm payment and your PNR e-ticket is ready immediately.</p>
-        </div>
+        <div class="step-card"><div class="step-num">1</div><h3>Pick your route</h3><p>Choose stations, travel day, and seat class. Results in under 2 seconds.</p></div>
+        <div class="step-card"><div class="step-num">2</div><h3>Select your seat</h3><p>Real-time seat map shows what's available. Taken seats are locked by real bookings.</p></div>
+        <div class="step-card"><div class="step-num">3</div><h3>Pay and travel</h3><p>Pay securely with Razorpay — UPI, cards, netbanking. E-ticket ready instantly.</p></div>
     </div>
 </section>
 
-<!-- ── Login ─────────────────────────────────────────── -->
-<section class="login-section" id="login-section">
+<!-- ── Auth card ─────────────────────────────────────── -->
+<section class="auth-section" id="auth-section">
     <div class="section-label" style="text-align:center;">Get started</div>
-    <h2 style="font-size:1.7rem;font-weight:800;letter-spacing:-0.5px;text-align:center;">
+    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;text-align:center;">
         Sign in to book
     </h2>
-    <p style="color:var(--text-dim);font-size:0.88rem;text-align:center;margin-top:0.5rem;">
-        You can search trains without signing in. Sign in only when you're ready to book.
+    <p style="color:var(--text-dim);font-size:.86rem;text-align:center;margin-top:.4rem;">
+        You can search trains without signing in.<br>Create a free account to book and manage your journeys.
     </p>
 
-    <div class="glass-card login-card animate-in">
-        <div style="display:flex;flex-direction:column;gap:13px;">
-            <div class="input-wrap">
-                <i data-lucide="user" size="15"></i>
-                <input type="text" id="username" placeholder="Username" autocomplete="username">
-            </div>
-            <div class="input-wrap">
-                <i data-lucide="lock" size="15"></i>
-                <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-            </div>
-            <p id="error-msg" class="error-msg">Please enter your username and password.</p>
-            <button id="login-btn" onclick="handleLogin()"
-                    style="width:100%;justify-content:center;padding:0.95rem;font-size:0.95rem;margin-top:4px;">
-                Sign In <i data-lucide="arrow-right" size="16"></i>
-            </button>
+    <div class="glass-card auth-card animate-in">
+
+        {% if demo_mode %}
+        <div class="demo-banner">
+            <i data-lucide="alert-triangle" size="15"></i>
+            Demo mode — payments are simulated. Add Razorpay keys to enable real payments.
         </div>
-        <p style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:1.25rem;line-height:1.6;">
-            Demo project — use any username and password to sign in.
-        </p>
+        {% endif %}
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tab-login"    onclick="switchTab('login')">Sign In</div>
+            <div class="auth-tab"        id="tab-register" onclick="switchTab('register')">Create Account</div>
+        </div>
+
+        <!-- Sign In form -->
+        <div id="form-login" style="display:flex;flex-direction:column;gap:11px;">
+            <div class="iw"><i data-lucide="mail" size="14"></i>
+                <input type="email" id="l-email" placeholder="Email address" autocomplete="email">
+            </div>
+            <div class="iw"><i data-lucide="lock" size="14"></i>
+                <input type="password" id="l-pass" placeholder="Password" autocomplete="current-password">
+            </div>
+            <p id="login-err" class="auth-err"></p>
+            <button id="login-btn" onclick="handleLogin()"
+                    style="width:100%;justify-content:center;padding:.9rem;font-size:.92rem;margin-top:3px;">
+                Sign In <i data-lucide="arrow-right" size="15"></i>
+            </button>
+            <p style="text-align:center;font-size:.74rem;color:var(--text-muted);margin-top:4px;">
+                Don't have an account?
+                <span onclick="switchTab('register')"
+                      style="color:var(--primary);cursor:pointer;font-weight:700;">
+                    Create one
+                </span>
+            </p>
+        </div>
+
+        <!-- Register form -->
+        <div id="form-register" style="display:none;flex-direction:column;gap:11px;">
+            <div class="iw"><i data-lucide="user" size="14"></i>
+                <input type="text" id="r-name" placeholder="Full name" autocomplete="name">
+            </div>
+            <div class="iw"><i data-lucide="mail" size="14"></i>
+                <input type="email" id="r-email" placeholder="Email address" autocomplete="email">
+            </div>
+            <div class="iw"><i data-lucide="phone" size="14"></i>
+                <input type="tel" id="r-phone" placeholder="10-digit mobile number"
+                       maxlength="10" inputmode="numeric" autocomplete="tel">
+            </div>
+            <div class="iw"><i data-lucide="lock" size="14"></i>
+                <input type="password" id="r-pass" placeholder="Password (min. 6 characters)" autocomplete="new-password">
+            </div>
+            <p id="register-err" class="auth-err"></p>
+            <button id="register-btn" onclick="handleRegister()"
+                    style="width:100%;justify-content:center;padding:.9rem;font-size:.92rem;margin-top:3px;">
+                Create Account <i data-lucide="arrow-right" size="15"></i>
+            </button>
+            <p style="text-align:center;font-size:.74rem;color:var(--text-muted);margin-top:4px;">
+                Already have an account?
+                <span onclick="switchTab('login')"
+                      style="color:var(--primary);cursor:pointer;font-weight:700;">
+                    Sign in
+                </span>
+            </p>
+        </div>
+
     </div>
 </section>
 
 <!-- ── Footer ────────────────────────────────────────── -->
 <footer class="footer">
-    <div style="display:flex;align-items:center;gap:9px;">
-        <i data-lucide="train-front" size="15" style="color:var(--primary);"></i>
+    <div style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="train-front" size="14" style="color:var(--primary);"></i>
         <span style="font-weight:700;color:var(--text-dim);">QuickRail</span>
         <span>— Built for Tamil Nadu's rail corridor</span>
     </div>
@@ -564,36 +369,116 @@
 <script>
     lucide.createIcons();
 
-    function scrollToLogin() {
-        document.getElementById("login-section").scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => document.getElementById("username").focus(), 600);
+    function scrollToAuth() {
+        document.getElementById("auth-section").scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => document.getElementById("l-email").focus(), 650);
     }
 
-    function handleLogin() {
-        const user = document.getElementById("username").value.trim();
-        const pass = document.getElementById("password").value.trim();
-        const err  = document.getElementById("error-msg");
+    /* ── Tab switcher ─────────────────────────────── */
+    function switchTab(tab) {
+        const isLogin = tab === "login";
+        document.getElementById("form-login").style.display    = isLogin ? "flex" : "none";
+        document.getElementById("form-register").style.display = isLogin ? "none" : "flex";
+        document.getElementById("tab-login").classList.toggle("active",    isLogin);
+        document.getElementById("tab-register").classList.toggle("active", !isLogin);
+        document.getElementById("login-err").style.display    = "none";
+        document.getElementById("register-err").style.display = "none";
+        setTimeout(() => document.getElementById(isLogin ? "l-email" : "r-name").focus(), 50);
+    }
 
-        if (!user || !pass) {
-            err.style.display = "block";
-            lucide.createIcons();
-            document.getElementById(user ? "password" : "username").focus();
-            return;
+    /* ── Sign In ──────────────────────────────────── */
+    async function handleLogin() {
+        const email = document.getElementById("l-email").value.trim();
+        const pass  = document.getElementById("l-pass").value;
+        const err   = document.getElementById("login-err");
+        const btn   = document.getElementById("login-btn");
+
+        if (!email || !pass) {
+            showErr(err, "Please enter your email and password."); return;
         }
-        err.style.display = "none";
 
-        const btn = document.getElementById("login-btn");
-        btn.disabled      = true;
-        btn.style.opacity = "0.7";
-        btn.innerHTML     = "Signing in&hellip;";
-        setTimeout(() => { location.href = "/dashboard"; }, 600);
+        setLoading(btn, "Signing in…");
+
+        try {
+            const res  = await fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ email, password: pass })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                location.href = "/dashboard";
+            } else {
+                showErr(err, data.error || "Login failed.");
+                resetBtn(btn, "Sign In");
+            }
+        } catch (e) {
+            showErr(err, "Could not connect. Try again.");
+            resetBtn(btn, "Sign In");
+        }
     }
 
-    ["username","password"].forEach(id => {
+    /* ── Register ─────────────────────────────────── */
+    async function handleRegister() {
+        const name  = document.getElementById("r-name").value.trim();
+        const email = document.getElementById("r-email").value.trim();
+        const phone = document.getElementById("r-phone").value.trim();
+        const pass  = document.getElementById("r-pass").value;
+        const err   = document.getElementById("register-err");
+        const btn   = document.getElementById("register-btn");
+
+        if (!name || !email || !phone || !pass) {
+            showErr(err, "Please fill in all fields."); return;
+        }
+        if (!/^\d{10}$/.test(phone)) {
+            showErr(err, "Enter a valid 10-digit phone number."); return;
+        }
+        if (pass.length < 6) {
+            showErr(err, "Password must be at least 6 characters."); return;
+        }
+
+        setLoading(btn, "Creating account…");
+
+        try {
+            const res  = await fetch("/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ name, email, phone, password: pass })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                location.href = "/dashboard";
+            } else {
+                showErr(err, data.error || "Registration failed.");
+                resetBtn(btn, "Create Account");
+            }
+        } catch (e) {
+            showErr(err, "Could not connect. Try again.");
+            resetBtn(btn, "Create Account");
+        }
+    }
+
+    /* ── Helpers ──────────────────────────────────── */
+    function showErr(el, msg)  { el.textContent = msg; el.style.display = "block"; lucide.createIcons(); }
+    function setLoading(btn, txt) { btn.disabled = true; btn.style.opacity = ".65"; btn.innerHTML = txt; }
+    function resetBtn(btn, txt)   { btn.disabled = false; btn.style.opacity = "1";
+        btn.innerHTML = txt + " <i data-lucide=\"arrow-right\" size=\"15\"></i>";
+        lucide.createIcons();
+    }
+
+    /* ── Enter key on all inputs ──────────────────── */
+    ["l-email","l-pass"].forEach(id =>
         document.getElementById(id).addEventListener("keydown", e => {
             if (e.key === "Enter") handleLogin();
-        });
-    });
+        })
+    );
+    ["r-name","r-email","r-phone","r-pass"].forEach(id =>
+        document.getElementById(id).addEventListener("keydown", e => {
+            if (e.key === "Enter") handleRegister();
+        })
+    );
 </script>
 </body>
 </html>
