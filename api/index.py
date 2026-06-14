@@ -1,17 +1,18 @@
 import os
+import time
 import hmac
 import hashlib
 import random
 import datetime
 from functools import wraps
+
 from flask import (Flask, request, jsonify, render_template,
-                   session, redirect, url_for)
+                    session, redirect, url_for)
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# ══════════════════════════════════════════════════════════
-#  APP SETUP
-# ══════════════════════════════════════════════════════════
+# ── App & config ──────────────────────────────────────────
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 app = Flask(
@@ -20,18 +21,24 @@ app = Flask(
     static_folder=os.path.join(BASE, "static")
 )
 
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
+_db_url = os.environ.get("DATABASE_URL", "")
+
+# SECRET_KEY must be set explicitly in production (anywhere DATABASE_URL
+# points to a real database). Locally, falls back to a dev-only value.
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+if not app.config["SECRET_KEY"]:
+    if _db_url:
+        raise RuntimeError("SECRET_KEY environment variable must be set in production.")
+    app.config["SECRET_KEY"] = "dev-only-secret-change-me"
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# SQLite locally → PostgreSQL on Vercel/Neon
-_db_url = os.environ.get(
-    "DATABASE_URL",
-    "sqlite:///" + os.path.join(BASE, "quickrail.db")
-)
-if _db_url.startswith("postgres://"):          # Neon gives postgres://, SQLAlchemy needs postgresql://
+if not _db_url:
+    _db_url = "sqlite:///" + os.path.join(BASE, "quickrail.db")
+elif _db_url.startswith("postgres://"):
     _db_url = _db_url.replace("postgres://", "postgresql://", 1)
-app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 
+app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 db = SQLAlchemy(app)
 
 # ── Razorpay ──────────────────────────────────────────────
@@ -48,45 +55,62 @@ if not DEMO_MODE:
         DEMO_MODE = True
 
 
-# ══════════════════════════════════════════════════════════
-#  DATABASE MODELS
-# ══════════════════════════════════════════════════════════
+# ── Models ────────────────────────────────────────────────
 class User(db.Model):
-    __tablename__  = "users"
-    id             = db.Column(db.Integer, primary_key=True)
-    name           = db.Column(db.String(100), nullable=False)
-    email          = db.Column(db.String(120), unique=True, nullable=False)
-    phone          = db.Column(db.String(15))
-    password_hash  = db.Column(db.String(256), nullable=False)
-    created_at     = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    bookings       = db.relationship("Booking", backref="user", lazy=True)
+    __tablename__ = "users"
+    id            = db.Column(db.Integer, primary_key=True)
+    name          = db.Column(db.String(100), nullable=False)
+    email         = db.Column(db.String(120), unique=True, nullable=False)
+    phone         = db.Column(db.String(15))
+    password_hash = db.Column(db.String(256), nullable=False)
+    created_at    = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    bookings      = db.relationship("Booking", backref="user", lazy=True)
+
+
+class SeatLock(db.Model):
+    """
+    One row per currently-confirmed seat. The unique constraint on
+    (train_id, travel_day, seat_number) guarantees two users can never hold
+    the same seat at the same time, even under concurrent requests.
+    Deleted when a booking is cancelled, freeing the seat for reuse.
+    """
+    __tablename__ = "seat_locks"
+    id          = db.Column(db.Integer, primary_key=True)
+    train_id    = db.Column(db.Integer, nullable=False)
+    travel_day  = db.Column(db.String(20), nullable=False)
+    seat_number = db.Column(db.Integer, nullable=False)
+    pnr         = db.Column(db.String(20), nullable=False, unique=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("train_id", "travel_day", "seat_number", name="uq_seat_lock"),
+    )
 
 
 class Booking(db.Model):
-    __tablename__        = "bookings"
-    id                   = db.Column(db.Integer, primary_key=True)
-    pnr                  = db.Column(db.String(20), unique=True, nullable=False)
-    user_id              = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    train_id             = db.Column(db.Integer, nullable=False)
-    train_name           = db.Column(db.String(100))
-    from_station         = db.Column(db.String(50))
-    to_station           = db.Column(db.String(50))
-    travel_day           = db.Column(db.String(20))
-    seat_number          = db.Column(db.Integer)
-    seat_class           = db.Column(db.String(5))
-    class_label          = db.Column(db.String(30))
-    fare                 = db.Column(db.Integer)
-    dep_time             = db.Column(db.String(10))
-    arr_time             = db.Column(db.String(10))
-    duration             = db.Column(db.String(20))
-    passenger_name       = db.Column(db.String(100))
-    passenger_phone      = db.Column(db.String(15))
-    passenger_dob        = db.Column(db.String(20))
-    status               = db.Column(db.String(20), default="confirmed")  # confirmed | cancelled
-    razorpay_order_id    = db.Column(db.String(100))
-    razorpay_payment_id  = db.Column(db.String(100))
-    refund_amount        = db.Column(db.Integer)
-    created_at           = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    __tablename__       = "bookings"
+    id                  = db.Column(db.Integer, primary_key=True)
+    pnr                 = db.Column(db.String(20), unique=True, nullable=False)
+    user_id             = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    train_id            = db.Column(db.Integer, nullable=False)
+    train_name          = db.Column(db.String(100))
+    from_station        = db.Column(db.String(50))
+    to_station          = db.Column(db.String(50))
+    travel_day          = db.Column(db.String(20))
+    seat_number         = db.Column(db.Integer)
+    seat_class          = db.Column(db.String(5))
+    class_label         = db.Column(db.String(30))
+    fare                = db.Column(db.Integer)
+    dep_time            = db.Column(db.String(10))
+    arr_time            = db.Column(db.String(10))
+    duration            = db.Column(db.String(20))
+    passenger_name      = db.Column(db.String(100))
+    passenger_phone     = db.Column(db.String(15))
+    passenger_dob       = db.Column(db.String(20))
+    status              = db.Column(db.String(20), default="confirmed")  # confirmed | cancelled
+    razorpay_order_id   = db.Column(db.String(100))
+    razorpay_payment_id = db.Column(db.String(100))
+    refund_amount       = db.Column(db.Integer)
+    created_at          = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def to_dict(self):
         return {
@@ -115,14 +139,11 @@ class Booking(db.Model):
         }
 
 
-# Create all tables on startup
 with app.app_context():
     db.create_all()
 
 
-# ══════════════════════════════════════════════════════════
-#  AUTH HELPERS
-# ══════════════════════════════════════════════════════════
+# ── Auth helpers ──────────────────────────────────────────
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -133,15 +154,37 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+
 def current_user():
     if "user_id" in session:
         return db.session.get(User, session["user_id"])
     return None
 
 
-# ══════════════════════════════════════════════════════════
-#  SEAT CLASS DEFINITIONS
-# ══════════════════════════════════════════════════════════
+# ── Simple in-memory rate limiter for auth routes ────────────
+# Limits repeated login/register attempts per IP. Resets on cold start —
+# fine for this project's scale, but a Redis-backed limiter would be the
+# production-grade upgrade for multi-instance deployments.
+_rate_hits = {}
+
+def rate_limit(max_requests=5, window_seconds=60):
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            ip  = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+            key = (ip, request.endpoint)
+            now = time.time()
+            hits = [t for t in _rate_hits.get(key, []) if now - t < window_seconds]
+            if len(hits) >= max_requests:
+                return jsonify({"success": False, "error": "Too many attempts. Please wait a minute and try again."}), 429
+            hits.append(now)
+            _rate_hits[key] = hits
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
+
+
+# ── Seat class definitions ───────────────────────────────────
 CLASSES = {
     "SL": {"label": "Sleeper",     "multiplier": 1.0},
     "3A": {"label": "AC 3-Tier",   "multiplier": 2.6},
@@ -154,9 +197,7 @@ PREMIUM_CLASSES = {
 PREMIUM_TRAIN_IDS = {20665, 22631}
 
 
-# ══════════════════════════════════════════════════════════
-#  TRAIN DATA
-# ══════════════════════════════════════════════════════════
+# ── Train data ────────────────────────────────────────────
 TRAINS = [
     {
         "id": 12631, "name": "Nellai Superfast",
@@ -276,9 +317,7 @@ TRAINS = [
 ]
 
 
-# ══════════════════════════════════════════════════════════
-#  PAGE ROUTES
-# ══════════════════════════════════════════════════════════
+# ── Page routes ───────────────────────────────────────────
 @app.route("/")
 def index():
     return render_template("index.html", demo_mode=DEMO_MODE)
@@ -296,10 +335,9 @@ def dashboard():
     )
 
 
-# ══════════════════════════════════════════════════════════
-#  AUTH ROUTES
-# ══════════════════════════════════════════════════════════
+# ── Auth routes ───────────────────────────────────────────
 @app.route("/register", methods=["POST"])
+@rate_limit(5, 60)
 def register():
     data     = request.json or {}
     name     = data.get("name",     "").strip()
@@ -327,6 +365,7 @@ def register():
 
 
 @app.route("/login", methods=["POST"])
+@rate_limit(5, 60)
 def login():
     data     = request.json or {}
     email    = data.get("email",    "").strip().lower()
@@ -347,17 +386,15 @@ def logout():
     return jsonify({"success": True})
 
 
-# ══════════════════════════════════════════════════════════
-#  SEARCH
-# ══════════════════════════════════════════════════════════
+# ── Search ────────────────────────────────────────────────
 @app.route("/search", methods=["POST"])
 def search():
-    data        = request.json or {}
-    u_from      = data.get("from", "")
-    u_to        = data.get("to",   "")
-    u_day       = data.get("day",  "")
-    u_class     = data.get("seat_class", "SL")
-    results     = []
+    data    = request.json or {}
+    u_from  = data.get("from", "")
+    u_to    = data.get("to",   "")
+    u_day   = data.get("day",  "")
+    u_class = data.get("seat_class", "SL")
+    results = []
 
     for t in TRAINS:
         if u_day not in t["days"] and "Daily" not in t["days"]:
@@ -380,13 +417,12 @@ def search():
         t2 = datetime.datetime.strptime(end["arr"],   "%H:%M")
         if t2 < t1:
             t2 += datetime.timedelta(days=1)
-        total_min  = int((t2 - t1).total_seconds() // 60)
-        h, m       = divmod(total_min, 60)
-        duration   = f"{h}h {m:02d}m"
+        total_min = int((t2 - t1).total_seconds() // 60)
+        h, m = divmod(total_min, 60)
+        duration = f"{h}h {m:02d}m"
 
         is_premium = t["id"] in PREMIUM_TRAIN_IDS
         class_map  = PREMIUM_CLASSES if is_premium else CLASSES
-
         resolved   = u_class if u_class in class_map else next(iter(class_map))
         cls_info   = class_map[resolved]
         final_fare = int(dist * t["base_fare"] * cls_info["multiplier"])
@@ -406,28 +442,25 @@ def search():
     return jsonify(results)
 
 
-# ══════════════════════════════════════════════════════════
-#  REAL-TIME SEAT AVAILABILITY
-# ══════════════════════════════════════════════════════════
+# ── Real-time seat availability ──────────────────────────
 @app.route("/seats/<int:train_id>/<path:travel_day>")
 def get_seats(train_id, travel_day):
-    """Return seat numbers already booked for this train + day."""
-    booked = (
-        Booking.query
-        .filter_by(train_id=train_id, travel_day=travel_day, status="confirmed")
-        .with_entities(Booking.seat_number)
+    locks = (
+        SeatLock.query
+        .filter_by(train_id=train_id, travel_day=travel_day)
+        .with_entities(SeatLock.seat_number)
         .all()
     )
-    return jsonify({"booked": [b.seat_number for b in booked]})
+    return jsonify({"booked": [s.seat_number for s in locks]})
 
 
-# ══════════════════════════════════════════════════════════
-#  PAYMENT — CREATE ORDER
-# ══════════════════════════════════════════════════════════
+# ── Payment: create order ────────────────────────────────
 @app.route("/create-order", methods=["POST"])
 @login_required
 def create_order():
-    fare = int(request.json.get("fare", 0))
+    fare = int((request.json or {}).get("fare", 0))
+    if fare <= 0:
+        return jsonify({"success": False, "error": "Invalid fare amount."}), 400
 
     if DEMO_MODE:
         return jsonify({
@@ -456,9 +489,7 @@ def create_order():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ══════════════════════════════════════════════════════════
-#  PAYMENT — VERIFY & CONFIRM BOOKING
-# ══════════════════════════════════════════════════════════
+# ── Payment: verify & confirm booking ────────────────────
 @app.route("/verify-payment", methods=["POST"])
 @login_required
 def verify_payment():
@@ -469,53 +500,57 @@ def verify_payment():
     demo         = data.get("demo_mode", False)
     booking_data = data.get("booking_data", {})
 
-    # ── Verify Razorpay signature (skip in demo mode) ──
+    # Verify Razorpay signature for real payments only.
     if not demo and not DEMO_MODE:
-        msg      = f"{order_id}|{payment_id}"
+        msg = f"{order_id}|{payment_id}"
         expected = hmac.new(
-            RAZORPAY_KEY_SECRET.encode(),
-            msg.encode(),
-            hashlib.sha256
+            RAZORPAY_KEY_SECRET.encode(), msg.encode(), hashlib.sha256
         ).hexdigest()
         if not hmac.compare_digest(expected, signature):
             return jsonify({"success": False, "error": "Payment verification failed."}), 400
 
-    # ── Race condition: seat already taken? ─────────────
-    conflict = Booking.query.filter_by(
+    pnr = "QR-" + str(random.randint(100000, 999999))
+
+    # Reserve the seat at the database level. The unique constraint on
+    # SeatLock guarantees this fails if another booking for the same
+    # train/day/seat was committed first — even if both requests passed
+    # earlier checks at the same moment.
+    db.session.add(SeatLock(
         train_id    = booking_data.get("trainId"),
         travel_day  = booking_data.get("day"),
         seat_number = booking_data.get("seat"),
-        status      = "confirmed",
-    ).first()
-    if conflict:
+        pnr         = pnr,
+    ))
+    try:
+        db.session.flush()
+    except IntegrityError:
+        db.session.rollback()
         return jsonify({
             "success": False,
             "error":   "This seat was just booked by someone else. Please choose another."
         }), 409
 
-    # ── Save booking ─────────────────────────────────────
-    pnr     = "QR-" + str(random.randint(100000, 999999))
     booking = Booking(
-        pnr                  = pnr,
-        user_id              = session["user_id"],
-        train_id             = booking_data.get("trainId"),
-        train_name           = booking_data.get("trainName"),
-        from_station         = booking_data.get("from"),
-        to_station           = booking_data.get("to"),
-        travel_day           = booking_data.get("day"),
-        dep_time             = booking_data.get("dep"),
-        arr_time             = booking_data.get("arr"),
-        duration             = booking_data.get("duration"),
-        seat_number          = booking_data.get("seat"),
-        seat_class           = booking_data.get("seatClass"),
-        class_label          = booking_data.get("classLabel"),
-        fare                 = booking_data.get("fare"),
-        passenger_name       = booking_data.get("passenger", {}).get("name"),
-        passenger_phone      = booking_data.get("passenger", {}).get("phone"),
-        passenger_dob        = booking_data.get("passenger", {}).get("dob"),
-        razorpay_order_id    = order_id,
-        razorpay_payment_id  = payment_id if not demo else "DEMO_" + pnr,
-        status               = "confirmed",
+        pnr                 = pnr,
+        user_id             = session["user_id"],
+        train_id            = booking_data.get("trainId"),
+        train_name          = booking_data.get("trainName"),
+        from_station        = booking_data.get("from"),
+        to_station          = booking_data.get("to"),
+        travel_day          = booking_data.get("day"),
+        dep_time            = booking_data.get("dep"),
+        arr_time            = booking_data.get("arr"),
+        duration            = booking_data.get("duration"),
+        seat_number         = booking_data.get("seat"),
+        seat_class          = booking_data.get("seatClass"),
+        class_label         = booking_data.get("classLabel"),
+        fare                = booking_data.get("fare"),
+        passenger_name      = booking_data.get("passenger", {}).get("name"),
+        passenger_phone     = booking_data.get("passenger", {}).get("phone"),
+        passenger_dob       = booking_data.get("passenger", {}).get("dob"),
+        razorpay_order_id   = order_id,
+        razorpay_payment_id = payment_id if not demo else "DEMO_" + pnr,
+        status              = "confirmed",
     )
     db.session.add(booking)
     db.session.commit()
@@ -523,9 +558,7 @@ def verify_payment():
     return jsonify({"success": True, "booking": booking.to_dict()})
 
 
-# ══════════════════════════════════════════════════════════
-#  MY BOOKINGS
-# ══════════════════════════════════════════════════════════
+# ── My bookings ───────────────────────────────────────────
 @app.route("/bookings")
 @login_required
 def get_bookings():
@@ -538,9 +571,7 @@ def get_bookings():
     return jsonify([b.to_dict() for b in bookings])
 
 
-# ══════════════════════════════════════════════════════════
-#  CANCEL BOOKING
-# ══════════════════════════════════════════════════════════
+# ── Cancel booking ────────────────────────────────────────
 @app.route("/cancel-booking", methods=["POST"])
 @login_required
 def cancel_booking():
@@ -556,22 +587,23 @@ def cancel_booking():
     booking.status        = "cancelled"
     booking.refund_amount = refund
 
-    # Real Razorpay refund (only if live payment was made)
+    # Free the seat by removing its lock so it can be rebooked.
+    SeatLock.query.filter_by(pnr=booking.pnr).delete()
+
+    # Real Razorpay refund (only for live payments, never for demo bookings).
     if (not DEMO_MODE and rzp
             and booking.razorpay_payment_id
             and not booking.razorpay_payment_id.startswith("DEMO_")):
         try:
             rzp.payment.refund(booking.razorpay_payment_id, {"amount": refund * 100})
         except Exception:
-            pass  # Don't block cancellation if refund API call fails
+            pass  # Don't block cancellation if the refund API call fails
 
     db.session.commit()
     return jsonify({"success": True, "refund": refund})
 
 
-# ══════════════════════════════════════════════════════════
-#  CHAT
-# ══════════════════════════════════════════════════════════
+# ── Chat assistant ────────────────────────────────────────
 @app.route("/chat", methods=["POST"])
 def chat():
     msg = (request.json or {}).get("message", "").lower()
@@ -620,6 +652,5 @@ def chat():
     })
 
 
-# ══════════════════════════════════════════════════════════
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
