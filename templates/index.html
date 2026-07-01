@@ -14,24 +14,23 @@
             position: fixed; top: 0; left: 0; right: 0; z-index: 100;
             padding: 1rem 3rem;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--glass-border);
-            background: rgba(2,6,23,0.72);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.92);
         }
         .nav-logo {
             display: flex; align-items: center; gap: 9px;
             font-weight: 800; font-size: 1.1rem; letter-spacing: -0.4px;
+            color: var(--text-main);
         }
         .nav-btn {
             background: transparent; color: var(--text-dim);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--border);
             padding: 0.5rem 1.1rem; font-size: 0.83rem;
             border-radius: 10px; cursor: pointer; transition: all .2s;
         }
         .nav-btn:hover {
-            color: var(--text-main); border-color: rgba(255,255,255,.2);
-            background: rgba(255,255,255,.04);
+            color: var(--text-main); border-color: var(--border-strong);
+            background: var(--surface-soft);
             transform: none; box-shadow: none; filter: none;
         }
 
@@ -39,23 +38,20 @@
         section { max-width: 1020px; margin: 0 auto; padding: 0 2rem; }
 
         /* ── Hero ────────────────────────────────────── */
-        .hero { padding-top: 9.5rem; padding-bottom: 5rem; text-align: center; }
+        .hero { padding-top: 9.5rem; padding-bottom: 3rem; text-align: center; }
         .hero-badge {
             display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(99,102,241,.1); border: 1px solid rgba(99,102,241,.22);
+            background: var(--primary-soft); border: 1px solid var(--primary-soft-2);
             padding: 5px 13px; border-radius: 30px;
-            font-size: 0.73rem; font-weight: 700; color: var(--primary);
+            font-size: 0.73rem; font-weight: 700; color: var(--primary-strong);
             letter-spacing: .5px; margin-bottom: 1.8rem;
         }
         .hero h1 {
             font-size: clamp(2.2rem,5vw,3.6rem); font-weight: 800;
             letter-spacing: -1.5px; line-height: 1.12; margin-bottom: 1.3rem;
+            color: var(--text-main);
         }
-        .hero h1 span {
-            background: linear-gradient(135deg,#6366f1,#22d3ee);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        .hero h1 span { color: var(--primary); }
         .hero-sub {
             font-size: 1rem; color: var(--text-dim); max-width: 540px;
             margin: 0 auto 2.2rem; line-height: 1.7;
@@ -67,36 +63,39 @@
         }
         .hero-note { display: block; margin-top: .9rem; font-size: .76rem; color: var(--text-muted); }
 
+        /* ── Disclaimer banner ───────────────────────── */
+        .disclaimer-wrap { margin-bottom: 3.2rem; }
+
         /* ── Route strip ─────────────────────────────── */
         .route-strip {
             display: flex; align-items: center; justify-content: center;
-            flex-wrap: wrap; max-width: 620px; margin: -0.5rem auto 4.5rem;
-            padding: 1.25rem 2rem;
-            background: rgba(255,255,255,.02);
-            border: 1px solid var(--glass-border); border-radius: 16px;
+            flex-wrap: wrap; max-width: 700px; margin: 0 auto 4.5rem;
+            padding: 1.25rem 1.5rem;
+            background: var(--surface-soft);
+            border: 1px solid var(--border); border-radius: 16px;
         }
-        .route-city { text-align: center; padding: 0 1rem; }
-        .route-city-name { font-weight: 800; font-size: .9rem; }
+        .route-city { text-align: center; padding: 0 .85rem; }
+        .route-city-name { font-weight: 800; font-size: .88rem; color: var(--text-main); }
         .route-city-dist { font-size: .62rem; color: var(--text-muted); margin-top: 2px; font-weight: 600; }
-        .route-arrow { color: var(--glass-border); font-size: 1.1rem; flex-shrink: 0; }
+        .route-arrow { color: var(--border-strong); font-size: 1.1rem; flex-shrink: 0; }
 
-        /* ── Problem ─────────────────────────────────── */
+        /* ── Section labels ───────────────────────────── */
         .section-label {
             font-size: .7rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 2px; color: var(--primary); margin-bottom: .9rem;
         }
-        .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-top: 2.25rem; }
-        .problem-card { padding: 1.6rem; border-radius: 18px; }
-        .problem-card.bad  { background: rgba(239,68,68,.05);   border: 1px solid rgba(239,68,68,.12); }
-        .problem-card.good { background: rgba(16,185,129,.05);  border: 1px solid rgba(16,185,129,.12); }
-        .problem-card h3   { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
-        .problem-card.bad  h3 { color: var(--danger); }
-        .problem-card.good h3 { color: var(--success); }
-        .problem-item {
-            display: flex; align-items: flex-start; gap: 9px;
-            margin-bottom: .8rem; font-size: .86rem; color: var(--text-dim); line-height: 1.5;
+
+        /* ── Features (replaces problem section) ──────── */
+        .features-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.4rem; margin-top: 2.25rem; margin-bottom: 4.5rem; }
+        .feature-card { padding: 1.6rem; border-radius: 18px; background: var(--surface); border: 1px solid var(--border); }
+        .feature-icon {
+            width: 38px; height: 38px; border-radius: 11px;
+            background: var(--primary-soft); border: 1px solid var(--primary-soft-2);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--primary-strong); margin-bottom: 1rem;
         }
-        .problem-item i { flex-shrink: 0; margin-top: 2px; }
+        .feature-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: .45rem; color: var(--text-main); }
+        .feature-card p  { font-size: .84rem; color: var(--text-dim); line-height: 1.6; }
 
         /* ── Stats ───────────────────────────────────── */
         .stats-row {
@@ -105,41 +104,29 @@
         }
         .stat-card {
             padding: 1.4rem; border-radius: 16px; text-align: center;
-            background: rgba(255,255,255,.02); border: 1px solid var(--glass-border);
+            background: var(--surface-soft); border: 1px solid var(--border);
         }
         .stat-num {
             font-size: 1.9rem; font-weight: 800; letter-spacing: -1px;
-            background: linear-gradient(135deg,#f8fafc,#94a3b8);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-main);
         }
         .stat-label { font-size: .72rem; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
 
         /* ── How it works ────────────────────────────── */
         .steps-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.4rem; margin-top: 2.25rem; margin-bottom: 4.5rem; }
-        .step-card { padding: 1.6rem; border-radius: 18px; background: rgba(255,255,255,.02); border: 1px solid var(--glass-border); }
+        .step-card { padding: 1.6rem; border-radius: 18px; background: var(--surface); border: 1px solid var(--border); }
         .step-num {
             width: 32px; height: 32px; border-radius: 9px;
-            background: var(--primary-glow); border: 1px solid rgba(99,102,241,.25);
+            background: var(--primary-soft); border: 1px solid var(--primary-soft-2);
             display: flex; align-items: center; justify-content: center;
-            font-size: .78rem; font-weight: 800; color: var(--primary); margin-bottom: 1rem;
+            font-size: .78rem; font-weight: 800; color: var(--primary-strong); margin-bottom: 1rem;
         }
-        .step-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: .45rem; }
+        .step-card h3 { font-size: .95rem; font-weight: 700; margin-bottom: .45rem; color: var(--text-main); }
         .step-card p  { font-size: .82rem; color: var(--text-dim); line-height: 1.6; }
 
         /* ── Auth card ───────────────────────────────── */
         .auth-section { padding-bottom: 5.5rem; display: flex; flex-direction: column; align-items: center; }
         .auth-card { width: 100%; max-width: 420px; padding: 2.25rem; margin-top: 2.25rem; }
-
-        /* Tabs */
-        .auth-tabs { display: flex; border-bottom: 1px solid var(--glass-border); margin-bottom: 1.6rem; }
-        .auth-tab {
-            flex: 1; padding: .75rem; text-align: center;
-            font-size: .85rem; font-weight: 700; color: var(--text-muted);
-            cursor: pointer; border-bottom: 2px solid transparent;
-            transition: color .2s, border-color .2s; margin-bottom: -1px;
-        }
-        .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
         /* Input with icon */
         .iw { position: relative; }
@@ -149,28 +136,39 @@
         .auth-err {
             font-size: .77rem; color: var(--danger); font-weight: 600;
             display: none; padding: .5rem .75rem;
-            background: rgba(239,68,68,.08); border-radius: 8px;
-            border: 1px solid rgba(239,68,68,.15);
+            background: var(--danger-soft); border-radius: 8px;
+            border: 1px solid #fecaca;
         }
 
-        /* ── Demo mode banner ────────────────────────── */
-        .demo-banner {
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.2);
-            border-radius: 10px; padding: .65rem .9rem;
-            font-size: .76rem; color: #fbbf24; font-weight: 600; margin-bottom: 1.1rem;
+        .otp-note {
+            font-size: .78rem; color: var(--text-dim); text-align: center;
+            margin-top: .3rem;
         }
+
+        .otp-display {
+            display: none; align-items: center; justify-content: center; gap: 8px;
+            background: var(--primary-soft); border: 1px solid var(--primary-soft-2);
+            border-radius: 10px; padding: .7rem .9rem; font-size: .85rem;
+            color: var(--primary-strong); font-weight: 700; margin-bottom: .5rem;
+            letter-spacing: 1px;
+        }
+
+        .step-indicator {
+            display: flex; justify-content: center; gap: 6px; margin-bottom: 1.4rem;
+        }
+        .step-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--border-strong);
+        }
+        .step-dot.active { background: var(--primary); }
 
         /* ── Footer ──────────────────────────────────── */
         .footer {
-            border-top: 1px solid var(--glass-border);
+            border-top: 1px solid var(--border);
             padding: 1.75rem 3rem;
             display: flex; justify-content: space-between; align-items: center;
             font-size: .76rem; color: var(--text-muted);
         }
-
-        /* Blobs */
-        .blob { position: fixed; border-radius: 50%; filter: blur(160px); z-index: -1; pointer-events: none; }
 
         @keyframes pulse-dot {
             0%,100% { opacity:1; transform:scale(1); }
@@ -179,9 +177,6 @@
     </style>
 </head>
 <body>
-
-<div class="blob" style="width:440px;height:440px;top:0;left:4%;background:var(--primary);opacity:.09;"></div>
-<div class="blob" style="width:340px;height:340px;bottom:8%;right:4%;background:var(--accent);opacity:.06;"></div>
 
 <!-- ── Nav ──────────────────────────────────────────── -->
 <nav class="nav">
@@ -196,18 +191,31 @@
 <section class="hero">
     <div class="hero-badge">
         <i data-lucide="map-pin" size="11"></i>
-        Chennai · Trichy · Madurai · Tirunelveli
+        Chennai · Trichy · Madurai · Coimbatore · Tirunelveli
     </div>
     <h1>Train booking that<br><span>doesn't need a tutorial.</span></h1>
     <p class="hero-sub">
-        Finding and booking a train in Tamil Nadu shouldn't take 10 minutes
-        and three wrong turns. QuickRail gets you from search to confirmed
-        ticket in under 60 seconds.
+        Search the Tamil Nadu Southern Corridor, pick your seat on a real
+        coach-style map, and get a confirmed e-ticket in under 60 seconds —
+        no payment, no paperwork.
     </p>
     <button class="hero-cta" onclick="scrollToAuth()">
         <i data-lucide="search" size="17"></i> Search trains
     </button>
-    <span class="hero-note">Free to use &nbsp;·&nbsp; Secure payments via Razorpay</span>
+    <span class="hero-note">Free to use &nbsp;·&nbsp; No payment required &nbsp;·&nbsp; Sign in with mobile number</span>
+</section>
+
+<!-- ── Disclaimer (front and center, not buried) ──────── -->
+<section class="disclaimer-wrap">
+    <div class="disclaimer-banner">
+        <i data-lucide="info" size="18" style="flex-shrink:0;margin-top:1px;"></i>
+        <div>
+            <strong>QuickRail is a demo / student project.</strong>
+            Trains, schedules, live tracking, and bookings shown here are
+            simulated and do not represent real Indian Railways services.
+            No real tickets are issued and no real payment is processed.
+        </div>
+    </div>
 </section>
 
 <!-- ── Route strip ───────────────────────────────────── -->
@@ -219,35 +227,42 @@
         <div class="route-arrow">——</div>
         <div class="route-city"><div class="route-city-name">Madurai</div><div class="route-city-dist">495 km</div></div>
         <div class="route-arrow">——</div>
+        <div class="route-city"><div class="route-city-name">Coimbatore</div><div class="route-city-dist">590 km</div></div>
+        <div class="route-arrow">——</div>
         <div class="route-city"><div class="route-city-name">Tirunelveli</div><div class="route-city-dist">650 km</div></div>
     </div>
 </section>
 
-<!-- ── Problem ───────────────────────────────────────── -->
-<section style="padding-bottom:4.5rem;">
-    <div class="section-label">The Problem</div>
-    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;margin-bottom:.45rem;">
-        Booking a train is harder than it should be.
+<!-- ── Features ──────────────────────────────────────── -->
+<section>
+    <div class="section-label">Features</div>
+    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;margin-bottom:.45rem;color:var(--text-main);">
+        Everything you need, nothing you don't.
     </h2>
-    <p style="color:var(--text-dim);font-size:.9rem;max-width:540px;line-height:1.7;">
-        Over 14 million passengers travel on Tamil Nadu's rail network every day.
-        Many still rely on agents to book — paying extra because the official
-        system is too complicated on a phone.
+    <p style="color:var(--text-dim);font-size:.9rem;max-width:560px;line-height:1.7;">
+        Built to feel like a modern airline app — fast search, a real seat
+        map, and instant confirmation.
     </p>
-    <div class="problem-grid">
-        <div class="problem-card bad">
-            <h3>Today's experience</h3>
-            <div class="problem-item"><i data-lucide="x-circle" size="14" style="color:var(--danger);"></i>Account registration, Aadhaar verification, and captchas before you can see a single fare</div>
-            <div class="problem-item"><i data-lucide="x-circle" size="14" style="color:var(--danger);"></i>Pages time out on 2G/3G connections common in rural areas</div>
-            <div class="problem-item"><i data-lucide="x-circle" size="14" style="color:var(--danger);"></i>Agents charge ₹50–150 extra per ticket as a convenience fee</div>
-            <div class="problem-item"><i data-lucide="x-circle" size="14" style="color:var(--danger);"></i>No clear seat map — you don't know where you'll sit until boarding</div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon"><i data-lucide="search" size="18"></i></div>
+            <h3>Search without signing in</h3>
+            <p>Browse routes, fares, and timings freely. Sign in only when you're ready to book.</p>
         </div>
-        <div class="problem-card good">
-            <h3>With QuickRail</h3>
-            <div class="problem-item"><i data-lucide="check-circle" size="14" style="color:var(--success);"></i>Search any route in 2 seconds — no login needed to browse</div>
-            <div class="problem-item"><i data-lucide="check-circle" size="14" style="color:var(--success);"></i>Lightweight, fast on slow connections</div>
-            <div class="problem-item"><i data-lucide="check-circle" size="14" style="color:var(--success);"></i>Visual seat map — pick exactly where you sit</div>
-            <div class="problem-item"><i data-lucide="check-circle" size="14" style="color:var(--success);"></i>Pay securely with UPI, card, or netbanking. Cancel anytime.</div>
+        <div class="feature-card">
+            <div class="feature-icon"><i data-lucide="armchair" size="18"></i></div>
+            <h3>Real coach-style seat map</h3>
+            <p>See exactly which seats are free for your segment — even if they're booked for part of the journey by someone else.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i data-lucide="radar" size="18"></i></div>
+            <h3>Simulated live tracking</h3>
+            <p>Ask the chat assistant "where is train 12631 right now?" and get an estimated position and ETA.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon"><i data-lucide="message-circle" size="18"></i></div>
+            <h3>Book by chatting</h3>
+            <p>Prefer typing over tapping? Our assistant can search, select a seat, and confirm your booking end-to-end.</p>
         </div>
     </div>
 </section>
@@ -257,96 +272,88 @@
     <div class="stats-row">
         <div class="stat-card"><div class="stat-num">11</div><div class="stat-label">Trains covered</div></div>
         <div class="stat-card"><div class="stat-num">650<span style="font-size:.95rem;font-weight:600;">km</span></div><div class="stat-label">Route length</div></div>
-        <div class="stat-card"><div class="stat-num">&lt;60<span style="font-size:.95rem;font-weight:600;">s</span></div><div class="stat-label">To book a ticket</div></div>
-        <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Seat classes</div></div>
+        <div class="stat-card"><div class="stat-num">5</div><div class="stat-label">Stations</div></div>
+        <div class="stat-card"><div class="stat-num">5</div><div class="stat-label">Seat classes</div></div>
     </div>
 </section>
 
 <!-- ── How it works ──────────────────────────────────── -->
 <section>
     <div class="section-label">How it works</div>
-    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;">Three steps. That's it.</h2>
+    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;color:var(--text-main);">Three steps. That's it.</h2>
     <div class="steps-row">
         <div class="step-card"><div class="step-num">1</div><h3>Pick your route</h3><p>Choose stations, travel day, and seat class. Results in under 2 seconds.</p></div>
-        <div class="step-card"><div class="step-num">2</div><h3>Select your seat</h3><p>Real-time seat map shows what's available. Taken seats are locked by real bookings.</p></div>
-        <div class="step-card"><div class="step-num">3</div><h3>Pay and travel</h3><p>Pay securely with Razorpay — UPI, cards, netbanking. E-ticket ready instantly.</p></div>
+        <div class="step-card"><div class="step-num">2</div><h3>Select your seat</h3><p>Coach-style seat map shows what's really free for your journey segment.</p></div>
+        <div class="step-card"><div class="step-num">3</div><h3>Confirm instantly</h3><p>No payment step — tap Confirm Booking and your e-ticket is ready right away.</p></div>
     </div>
 </section>
 
-<!-- ── Auth card ─────────────────────────────────────── -->
+<!-- ── Auth card — mobile + OTP ───────────────────────── -->
 <section class="auth-section" id="auth-section">
     <div class="section-label" style="text-align:center;">Get started</div>
-    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;text-align:center;">
-        Sign in to book
+    <h2 style="font-size:1.65rem;font-weight:800;letter-spacing:-.5px;text-align:center;color:var(--text-main);">
+        Sign in with your mobile number
     </h2>
     <p style="color:var(--text-dim);font-size:.86rem;text-align:center;margin-top:.4rem;">
-        You can search trains without signing in.<br>Create a free account to book and manage your journeys.
+        You can search trains without signing in.<br>Enter your number to get a one-time code — no password needed.
     </p>
 
     <div class="glass-card auth-card animate-in">
 
-        {% if demo_mode %}
-        <div class="demo-banner">
-            <i data-lucide="alert-triangle" size="15"></i>
-            Demo mode — payments are simulated. Add Razorpay keys to enable real payments.
-        </div>
-        {% endif %}
-
-        <!-- Tabs -->
-        <div class="auth-tabs">
-            <div class="auth-tab active" id="tab-login"    onclick="switchTab('login')">Sign In</div>
-            <div class="auth-tab"        id="tab-register" onclick="switchTab('register')">Create Account</div>
+        <div class="step-indicator">
+            <span class="step-dot active" id="dot-1"></span>
+            <span class="step-dot" id="dot-2"></span>
+            <span class="step-dot" id="dot-3"></span>
         </div>
 
-        <!-- Sign In form -->
-        <div id="form-login" style="display:flex;flex-direction:column;gap:11px;">
-            <div class="iw"><i data-lucide="mail" size="14"></i>
-                <input type="email" id="l-email" placeholder="Email address" autocomplete="email">
-            </div>
-            <div class="iw"><i data-lucide="lock" size="14"></i>
-                <input type="password" id="l-pass" placeholder="Password" autocomplete="current-password">
-            </div>
-            <p id="login-err" class="auth-err"></p>
-            <button id="login-btn" onclick="handleLogin()"
-                    style="width:100%;justify-content:center;padding:.9rem;font-size:.92rem;margin-top:3px;">
-                Sign In <i data-lucide="arrow-right" size="15"></i>
-            </button>
-            <p style="text-align:center;font-size:.74rem;color:var(--text-muted);margin-top:4px;">
-                Don't have an account?
-                <span onclick="switchTab('register')"
-                      style="color:var(--primary);cursor:pointer;font-weight:700;">
-                    Create one
-                </span>
-            </p>
-        </div>
-
-        <!-- Register form -->
-        <div id="form-register" style="display:none;flex-direction:column;gap:11px;">
-            <div class="iw"><i data-lucide="user" size="14"></i>
-                <input type="text" id="r-name" placeholder="Full name" autocomplete="name">
-            </div>
-            <div class="iw"><i data-lucide="mail" size="14"></i>
-                <input type="email" id="r-email" placeholder="Email address" autocomplete="email">
-            </div>
+        <!-- Step 1: Phone entry -->
+        <div id="step-phone" style="display:flex;flex-direction:column;gap:11px;">
             <div class="iw"><i data-lucide="phone" size="14"></i>
-                <input type="tel" id="r-phone" placeholder="10-digit mobile number"
+                <input type="tel" id="phone-input" placeholder="10-digit mobile number"
                        maxlength="10" inputmode="numeric" autocomplete="tel">
             </div>
-            <div class="iw"><i data-lucide="lock" size="14"></i>
-                <input type="password" id="r-pass" placeholder="Password (min. 6 characters)" autocomplete="new-password">
-            </div>
-            <p id="register-err" class="auth-err"></p>
-            <button id="register-btn" onclick="handleRegister()"
+            <p id="phone-err" class="auth-err"></p>
+            <button id="send-otp-btn" onclick="handleSendOtp()"
                     style="width:100%;justify-content:center;padding:.9rem;font-size:.92rem;margin-top:3px;">
-                Create Account <i data-lucide="arrow-right" size="15"></i>
+                Send OTP <i data-lucide="arrow-right" size="15"></i>
+            </button>
+            <p class="otp-note">A simulated OTP will be shown on screen — nothing is sent via SMS.</p>
+        </div>
+
+        <!-- Step 2: OTP entry -->
+        <div id="step-otp" style="display:none;flex-direction:column;gap:11px;">
+            <div class="otp-display" id="otp-display">
+                <i data-lucide="key-round" size="15"></i>
+                <span id="otp-value"></span>
+            </div>
+            <div class="iw"><i data-lucide="shield-check" size="14"></i>
+                <input type="text" id="otp-input" placeholder="6-digit OTP"
+                       maxlength="6" inputmode="numeric">
+            </div>
+            <p id="otp-err" class="auth-err"></p>
+            <button id="verify-otp-btn" onclick="handleVerifyOtp()"
+                    style="width:100%;justify-content:center;padding:.9rem;font-size:.92rem;margin-top:3px;">
+                Verify &amp; Continue <i data-lucide="arrow-right" size="15"></i>
             </button>
             <p style="text-align:center;font-size:.74rem;color:var(--text-muted);margin-top:4px;">
-                Already have an account?
-                <span onclick="switchTab('login')"
+                Wrong number?
+                <span onclick="goToStep('phone')"
                       style="color:var(--primary);cursor:pointer;font-weight:700;">
-                    Sign in
+                    Go back
                 </span>
             </p>
+        </div>
+
+        <!-- Step 3: Name entry (new users only) -->
+        <div id="step-name" style="display:none;flex-direction:column;gap:11px;">
+            <div class="iw"><i data-lucide="user" size="14"></i>
+                <input type="text" id="name-input" placeholder="Your full name" autocomplete="name">
+            </div>
+            <p id="name-err" class="auth-err"></p>
+            <button id="finish-btn" onclick="handleFinish()"
+                    style="width:100%;justify-content:center;padding:.9rem;font-size:.92rem;margin-top:3px;">
+                Continue to Dashboard <i data-lucide="arrow-right" size="15"></i>
+            </button>
         </div>
 
     </div>
@@ -357,128 +364,164 @@
     <div style="display:flex;align-items:center;gap:8px;">
         <i data-lucide="train-front" size="14" style="color:var(--primary);"></i>
         <span style="font-weight:700;color:var(--text-dim);">QuickRail</span>
-        <span>— Built for Tamil Nadu's rail corridor</span>
+        <span>— A demo project for Tamil Nadu's rail corridor</span>
     </div>
     <div style="display:flex;align-items:center;gap:6px;">
         <span style="width:7px;height:7px;background:var(--success);border-radius:50%;
                      animation:pulse-dot 2s infinite;"></span>
-        <span>Live</span>
+        <span>Simulated · Live</span>
     </div>
 </footer>
 
 <script>
     lucide.createIcons();
 
+    let currentPhone = "";
+
     function scrollToAuth() {
         document.getElementById("auth-section").scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => document.getElementById("l-email").focus(), 650);
+        setTimeout(() => document.getElementById("phone-input").focus(), 650);
     }
 
-    /* ── Tab switcher ─────────────────────────────── */
-    function switchTab(tab) {
-        const isLogin = tab === "login";
-        document.getElementById("form-login").style.display    = isLogin ? "flex" : "none";
-        document.getElementById("form-register").style.display = isLogin ? "none" : "flex";
-        document.getElementById("tab-login").classList.toggle("active",    isLogin);
-        document.getElementById("tab-register").classList.toggle("active", !isLogin);
-        document.getElementById("login-err").style.display    = "none";
-        document.getElementById("register-err").style.display = "none";
-        setTimeout(() => document.getElementById(isLogin ? "l-email" : "r-name").focus(), 50);
+    /* ── Step switcher ─────────────────────────────── */
+    function goToStep(step) {
+        document.getElementById("step-phone").style.display = step === "phone" ? "flex" : "none";
+        document.getElementById("step-otp").style.display   = step === "otp"   ? "flex" : "none";
+        document.getElementById("step-name").style.display  = step === "name"  ? "flex" : "none";
+
+        document.getElementById("dot-1").classList.toggle("active", step === "phone");
+        document.getElementById("dot-2").classList.toggle("active", step === "otp");
+        document.getElementById("dot-3").classList.toggle("active", step === "name");
+
+        const focusMap = { phone: "phone-input", otp: "otp-input", name: "name-input" };
+        setTimeout(() => document.getElementById(focusMap[step])?.focus(), 50);
     }
 
-    /* ── Sign In ──────────────────────────────────── */
-    async function handleLogin() {
-        const email = document.getElementById("l-email").value.trim();
-        const pass  = document.getElementById("l-pass").value;
-        const err   = document.getElementById("login-err");
-        const btn   = document.getElementById("login-btn");
+    /* ── Step 1: Send OTP ─────────────────────────── */
+    async function handleSendOtp() {
+        const phone = document.getElementById("phone-input").value.trim();
+        const err   = document.getElementById("phone-err");
+        const btn   = document.getElementById("send-otp-btn");
 
-        if (!email || !pass) {
-            showErr(err, "Please enter your email and password."); return;
+        if (!/^\d{10}$/.test(phone)) {
+            showErr(err, "Enter a valid 10-digit mobile number.");
+            return;
         }
 
-        setLoading(btn, "Signing in…");
+        setLoading(btn, "Sending…");
 
         try {
-            const res  = await fetch("/login", {
+            const res  = await fetch("/send-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ email, password: pass })
+                body: JSON.stringify({ phone })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                currentPhone = phone;
+                document.getElementById("otp-value").textContent = "Your OTP is " + data.otp;
+                document.getElementById("otp-display").style.display = "flex";
+                goToStep("otp");
+                resetBtn(btn, "Send OTP");
+            } else {
+                showErr(err, data.error || "Could not send OTP.");
+                resetBtn(btn, "Send OTP");
+            }
+        } catch (e) {
+            showErr(err, "Could not connect. Try again.");
+            resetBtn(btn, "Send OTP");
+        }
+    }
+
+    /* ── Step 2: Verify OTP ───────────────────────── */
+    async function handleVerifyOtp() {
+        const otp = document.getElementById("otp-input").value.trim();
+        const err = document.getElementById("otp-err");
+        const btn = document.getElementById("verify-otp-btn");
+
+        if (!/^\d{6}$/.test(otp)) {
+            showErr(err, "Enter the 6-digit OTP.");
+            return;
+        }
+
+        setLoading(btn, "Verifying…");
+
+        try {
+            const res  = await fetch("/verify-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: currentPhone, otp })
             });
             const data = await res.json();
 
             if (data.success) {
                 location.href = "/dashboard";
+            } else if (data.needsName) {
+                resetBtn(btn, "Verify & Continue");
+                goToStep("name");
             } else {
-                showErr(err, data.error || "Login failed.");
-                resetBtn(btn, "Sign In");
+                showErr(err, data.error || "Verification failed.");
+                resetBtn(btn, "Verify & Continue");
             }
         } catch (e) {
             showErr(err, "Could not connect. Try again.");
-            resetBtn(btn, "Sign In");
+            resetBtn(btn, "Verify & Continue");
         }
     }
 
-    /* ── Register ─────────────────────────────────── */
-    async function handleRegister() {
-        const name  = document.getElementById("r-name").value.trim();
-        const email = document.getElementById("r-email").value.trim();
-        const phone = document.getElementById("r-phone").value.trim();
-        const pass  = document.getElementById("r-pass").value;
-        const err   = document.getElementById("register-err");
-        const btn   = document.getElementById("register-btn");
+    /* ── Step 3: New user name + finish ───────────── */
+    async function handleFinish() {
+        const name = document.getElementById("name-input").value.trim();
+        const otp  = document.getElementById("otp-input").value.trim();
+        const err  = document.getElementById("name-err");
+        const btn  = document.getElementById("finish-btn");
 
-        if (!name || !email || !phone || !pass) {
-            showErr(err, "Please fill in all fields."); return;
-        }
-        if (!/^\d{10}$/.test(phone)) {
-            showErr(err, "Enter a valid 10-digit phone number."); return;
-        }
-        if (pass.length < 6) {
-            showErr(err, "Password must be at least 6 characters."); return;
+        if (name.length < 2) {
+            showErr(err, "Please enter your name.");
+            return;
         }
 
         setLoading(btn, "Creating account…");
 
         try {
-            const res  = await fetch("/register", {
+            const res  = await fetch("/verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ name, email, phone, password: pass })
+                body: JSON.stringify({ phone: currentPhone, otp, name })
             });
             const data = await res.json();
 
             if (data.success) {
                 location.href = "/dashboard";
             } else {
-                showErr(err, data.error || "Registration failed.");
-                resetBtn(btn, "Create Account");
+                showErr(err, data.error || "Could not create account.");
+                resetBtn(btn, "Continue to Dashboard");
             }
         } catch (e) {
             showErr(err, "Could not connect. Try again.");
-            resetBtn(btn, "Create Account");
+            resetBtn(btn, "Continue to Dashboard");
         }
     }
 
     /* ── Helpers ──────────────────────────────────── */
-    function showErr(el, msg)  { el.textContent = msg; el.style.display = "block"; lucide.createIcons(); }
+    function showErr(el, msg)  { el.textContent = msg; el.style.display = "block"; }
     function setLoading(btn, txt) { btn.disabled = true; btn.style.opacity = ".65"; btn.innerHTML = txt; }
     function resetBtn(btn, txt)   { btn.disabled = false; btn.style.opacity = "1";
         btn.innerHTML = txt + " <i data-lucide=\"arrow-right\" size=\"15\"></i>";
         lucide.createIcons();
     }
 
-    /* ── Enter key on all inputs ──────────────────── */
-    ["l-email","l-pass"].forEach(id =>
-        document.getElementById(id).addEventListener("keydown", e => {
-            if (e.key === "Enter") handleLogin();
-        })
-    );
-    ["r-name","r-email","r-phone","r-pass"].forEach(id =>
-        document.getElementById(id).addEventListener("keydown", e => {
-            if (e.key === "Enter") handleRegister();
-        })
-    );
+    /* ── Enter key ─────────────────────────────────── */
+    document.getElementById("phone-input").addEventListener("keydown", e => {
+        if (e.key === "Enter") handleSendOtp();
+    });
+    document.getElementById("otp-input").addEventListener("keydown", e => {
+        if (e.key === "Enter") handleVerifyOtp();
+    });
+    document.getElementById("name-input").addEventListener("keydown", e => {
+        if (e.key === "Enter") handleFinish();
+    });
 </script>
 </body>
 </html>

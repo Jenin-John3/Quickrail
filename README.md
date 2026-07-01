@@ -1,30 +1,37 @@
 # QuickRail 🚆
 
-A simple train search and booking platform for the Chennai → Trichy → Madurai → Tirunelveli corridor in Tamil Nadu.
+A train search and booking demo for the Tamil Nadu Southern Corridor —
+Chennai → Trichy → Madurai → Coimbatore → Tirunelveli.
 
 **Live demo:** add-your-vercel-url-here
 
-## Problem
-
-Booking trains in Tamil Nadu is often too complicated for a quick phone search — endless verification steps, no clear pricing, and many people end up paying agents extra just to get a ticket booked.
-
-QuickRail is a simplified alternative: search instantly without an account, see real seat availability and pricing upfront, and book with real payments in under a minute.
+> ⚠️ **This is a demo/student project.** Trains, schedules, live tracking, and
+> bookings shown here are simulated and do not represent real Indian Railways
+> services. No real tickets are issued and no real payment is processed.
 
 ## Features
 
 - Search trains without signing in
+- Sign in with just a mobile number — simulated OTP shown on screen, no SMS cost
 - 5 seat classes (Sleeper, AC 3-Tier, AC 2-Tier, Chair Car, Executive Chair)
-- Real-time seat map — no double bookings
-- Multi-step booking: seat → passenger details → payment → e-ticket
-- Real payments via Razorpay (UPI/cards/netbanking), with demo mode if no keys are set
+- **Segment-based seat allocation** — a seat can be shared by multiple
+  passengers travelling different, non-overlapping parts of the same route,
+  instead of being locked for the whole journey
+- Coach-style seat map that shows which seats are free for *your* segment,
+  even if they're booked for someone else's
+- Automatic seat-splitting when no single seat covers your full journey
+- 1-hour waitlist with automatic seat assignment on cancellation
+- Simulated live train tracking (time-based position estimate, no real GPS)
+- Rule-based conversational chatbot that can search, book, and answer
+  questions — writes to the same database as the manual booking flow
+- Instant booking confirmation — no payment step
 - Cancel bookings with automatic 90% refund
-- In-app chat assistant
 
 ## Tech Stack
 
 - **Backend:** Flask (Python)
 - **Database:** PostgreSQL (Neon) in production, SQLite locally
-- **Payments:** Razorpay
+- **Auth:** Mobile number + simulated OTP (no SMS gateway)
 - **Frontend:** HTML, CSS, JavaScript (no framework)
 - **Hosting:** Vercel
 
@@ -58,7 +65,9 @@ pip install -r requirements.txt --break-system-packages
 python api/index.py
 ```
 
-Visit `http://localhost:5000`. With no environment variables set, it runs in demo mode — full functionality, simulated payments, SQLite database.
+Visit `http://localhost:5000`. With no environment variables set, it runs in
+demo mode — full functionality, SQLite database, OTP shown directly on
+screen instead of sent via SMS.
 
 ## Environment Variables
 
@@ -66,9 +75,9 @@ Visit `http://localhost:5000`. With no environment variables set, it runs in dem
 |---|---|
 | `SECRET_KEY` | Required in production — random string for session security |
 | `DATABASE_URL` | PostgreSQL connection string (Neon) |
-| `RAZORPAY_KEY_ID` | Enables real payments (optional) |
-| `RAZORPAY_KEY_SECRET` | Pairs with the above (optional) |
 
 ## Notes
 
-Built as a learning project with help from AI tools (Claude) for code generation, debugging, and learning Flask, databases, and payment integration hands-on.
+Built as a learning project with help from AI tools (Claude) for code
+generation, debugging, and learning Flask, databases, and full-stack
+development hands-on.
