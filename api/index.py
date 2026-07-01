@@ -29,6 +29,14 @@ if not app.config["SECRET_KEY"]:
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Session cookies need SameSite=Lax + Secure in production (HTTPS on Vercel)
+# so the browser actually keeps sending them back on subsequent fetch() calls.
+# Without this, some browsers silently drop the cookie cross-request on
+# serverless deployments, which looks exactly like "randomly logged out".
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"]   = bool(os.environ.get("DATABASE_URL"))
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+
 if not _db_url:
     _db_url = "sqlite:///" + os.path.join(BASE, "quickrail.db")
 elif _db_url.startswith("postgres://"):
@@ -146,14 +154,48 @@ with app.app_context():
     db.create_all()
 
 
+# Any route NOT in this set is treated as an API endpoint for error-handling
+# purposes: unhandled exceptions there return JSON instead of Flask's default
+# HTML error page, so fetch().json() in the frontend never breaks silently.
+_PAGE_ROUTES = {"/", "/dashboard"}
+
+
+@app.errorhandler(Exception)
+def handle_uncaught(e):
+    db.session.rollback()
+    if request.path not in _PAGE_ROUTES:
+        return jsonify({"success": False,
+                        "error": "Something went wrong on our end. Please try again."}), 500
+    raise e
+
+
 # ── Auth helpers ──────────────────────────────────────────
-def login_required(f):
+def page_login_required(f):
+    """
+    For HTML page routes only (e.g. /dashboard). Not logged in -> redirect
+    to the landing page so the browser shows a real page, not JSON.
+    """
     @wraps(f)
     def decorated(*args, **kwargs):
         if "user_id" not in session:
-            if request.is_json:
-                return jsonify({"success": False, "error": "Not logged in"}), 401
             return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def login_required(f):
+    """
+    For API routes called via fetch() from script.js/chatbot.js.
+    Always returns JSON on auth failure -- never a redirect. A redirect here
+    would return the HTML landing page to fetch(), which fetch() follows
+    silently, and res.json() then throws -- surfacing as a generic
+    "could not connect" error in the UI even though the real problem is
+    just an expired/missing session.
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if "user_id" not in session:
+            return jsonify({"success": False, "error": "Session expired. Please sign in again."}), 401
         return f(*args, **kwargs)
     return decorated
 
@@ -444,7 +486,7 @@ def index():
 
 
 @app.route("/dashboard")
-@login_required
+@page_login_required
 def dashboard():
     user = current_user()
     return render_template("dashboard.html", user_name=user.name)
