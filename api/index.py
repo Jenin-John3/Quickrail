@@ -155,14 +155,24 @@ def _run_light_migrations():
     db.create_all() only creates tables that don't exist yet -- it never
     alters a table that's already there. If this database still has tables
     from an earlier version of QuickRail (different columns -- e.g. the old
-    email/password/Razorpay schema), inserts against the current models fail
-    with "column does not exist" errors on every single booking, since the
-    new columns (seat_assignments, is_split, waitlist_until, etc.) are
-    simply missing from the live table.
+    email/password/Razorpay schema), two separate problems show up:
 
-    This patches any existing table so it has every column the current
-    models expect, without touching or dropping existing rows. Safe to run
-    on every startup -- it's a no-op once the schema is caught up.
+    1. Missing columns -- inserts against the current models fail with
+       "column does not exist" because new columns (seat_assignments,
+       is_split, waitlist_until, etc.) simply aren't in the live table.
+
+    2. Leftover legacy columns -- e.g. an old `email` or `password_hash`
+       column that was NOT NULL under the old schema. The current code
+       never populates those columns, so every insert fails with a
+       "NOT NULL constraint" violation on a column the app doesn't even
+       know about anymore.
+
+    This function fixes both: it adds any column the current models expect
+    but the live table is missing, and it relaxes NOT NULL on any column
+    that exists in the live table but is NOT part of the current model
+    (i.e. a leftover the app will never populate). Existing rows and data
+    are never touched or dropped. Safe to run on every startup -- it's a
+    no-op once the schema is caught up.
     """
     from sqlalchemy import inspect, text
 
@@ -174,8 +184,11 @@ def _run_light_migrations():
         if table_name not in existing_tables:
             continue  # brand-new table -- db.create_all() already built it correctly
 
-        existing_cols = {c["name"] for c in inspector.get_columns(table_name)}
+        model_cols  = {col.name for col in model.__table__.columns}
+        db_columns  = inspector.get_columns(table_name)
+        existing_cols = {c["name"] for c in db_columns}
 
+        # 1) Add any column the model expects that the live table is missing.
         for col in model.__table__.columns:
             if col.name in existing_cols:
                 continue
@@ -189,6 +202,23 @@ def _run_light_migrations():
             except Exception as e:
                 db.session.rollback()
                 print(f"[migration] Could not add {table_name}.{col.name}: {e}")
+
+        # 2) Relax NOT NULL on any leftover column the current model doesn't
+        #    have -- the app will never provide a value for it on insert.
+        for c in db_columns:
+            if c["name"] in model_cols:
+                continue
+            if c.get("nullable", True):
+                continue  # already nullable, nothing to do
+            try:
+                db.session.execute(text(
+                    f'ALTER TABLE {table_name} ALTER COLUMN {c["name"]} DROP NOT NULL'
+                ))
+                db.session.commit()
+                print(f"[migration] Relaxed NOT NULL on legacy column {table_name}.{c['name']}")
+            except Exception as e:
+                db.session.rollback()
+                print(f"[migration] Could not relax NOT NULL on {table_name}.{c['name']}: {e}")
 
 
 with app.app_context():
@@ -206,6 +236,12 @@ _PAGE_ROUTES = {"/", "/dashboard"}
 def handle_uncaught(e):
     db.session.rollback()
     if request.path not in _PAGE_ROUTES:
+        import traceback
+        # Always print the real traceback to stdout/stderr so it shows up in
+        # Vercel's function logs -- otherwise a caught exception here is a
+        # black box and every failure just looks like "something went wrong"
+        # with no way to diagnose it.
+        traceback.print_exc()
         return jsonify({"success": False,
                         "error": "Something went wrong on our end. Please try again."}), 500
     raise e
