@@ -9,6 +9,7 @@ from flask import (Flask, request, jsonify, render_template,
                    session, redirect, url_for)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
+from werkzeug.exceptions import HTTPException
 
 # ── App & config ──────────────────────────────────────────
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -234,16 +235,26 @@ _PAGE_ROUTES = {"/", "/dashboard"}
 
 @app.errorhandler(Exception)
 def handle_uncaught(e):
+    # Werkzeug/Flask's own routine HTTP errors (404 for an undefined route
+    # like /favicon.ico, 400 for a bad request, 401, etc.) are HTTPException
+    # subclasses -- and therefore also plain Exception subclasses. Catching
+    # them here and rewriting them as a generic 500 is wrong: it was turning
+    # an ordinary "route not found" into a fake "something went wrong" and
+    # masking the real status code. Let Flask handle those exactly as it
+    # normally would; only genuinely unhandled crashes fall through below.
+    if isinstance(e, HTTPException):
+        return e
+
     db.session.rollback()
     if request.path not in _PAGE_ROUTES:
         import traceback
-        # Always print the real traceback to stdout/stderr so it shows up in
-        # Vercel's function logs -- otherwise a caught exception here is a
-        # black box and every failure just looks like "something went wrong"
-        # with no way to diagnose it.
         traceback.print_exc()
+        # Surfacing the real exception type + message directly in the
+        # response (not just Vercel's log viewer) so failures are
+        # immediately diagnosable without a trip through the dashboard.
+        # Fine for a demo project; tighten this before any real deployment.
         return jsonify({"success": False,
-                        "error": "Something went wrong on our end. Please try again."}), 500
+                        "error": f"[debug] {type(e).__name__}: {e}"}), 500
     raise e
 
 
@@ -575,7 +586,7 @@ def dashboard():
 @app.route("/send-otp", methods=["POST"])
 @rate_limit(5, 60)
 def send_otp():
-    phone = (request.json or {}).get("phone", "").strip()
+    phone = (request.get_json(silent=True) or {}).get("phone", "").strip()
     if not re.fullmatch(r"\d{10}", phone):
         return jsonify({"success": False, "error": "Enter a valid 10-digit mobile number."}), 400
 
@@ -589,7 +600,7 @@ def send_otp():
 @app.route("/verify-otp", methods=["POST"])
 @rate_limit(10, 60)
 def verify_otp():
-    data  = request.json or {}
+    data  = request.get_json(silent=True) or {}
     phone = data.get("phone", "").strip()
     otp   = data.get("otp",   "").strip()
     name  = data.get("name",  "").strip()   # required only for new users
@@ -639,7 +650,7 @@ def logout():
 
 @app.route("/search", methods=["POST"])
 def search():
-    data    = request.json or {}
+    data    = request.get_json(silent=True) or {}
     u_from  = data.get("from", "")
     u_to    = data.get("to",   "")
     u_day   = data.get("day",  "")
@@ -724,7 +735,7 @@ def get_seats(train_id, travel_day):
 @app.route("/confirm-booking", methods=["POST"])
 @login_required
 def confirm_booking():
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     booking_data = data.get("booking_data", {})
 
     train_id   = booking_data.get("trainId")
@@ -879,7 +890,7 @@ def get_bookings():
 @app.route("/cancel-booking", methods=["POST"])
 @login_required
 def cancel_booking():
-    pnr     = (request.json or {}).get("pnr", "")
+    pnr     = (request.get_json(silent=True) or {}).get("pnr", "")
     booking = Booking.query.filter_by(pnr=pnr, user_id=session["user_id"]).first()
 
     if not booking:
@@ -1224,7 +1235,7 @@ def _handle_info_query(msg):
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    msg   = (request.json or {}).get("message", "").strip()
+    msg   = (request.get_json(silent=True) or {}).get("message", "").strip()
     state = session.get(_CHAT_KEY, {"step": "idle"})
 
     msg_l = msg.lower()
