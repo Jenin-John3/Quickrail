@@ -150,8 +150,50 @@ class WaitlistEntry(db.Model):
     expires_at  = db.Column(db.DateTime, nullable=False)            # queued_at + 1 hour
 
 
+def _run_light_migrations():
+    """
+    db.create_all() only creates tables that don't exist yet -- it never
+    alters a table that's already there. If this database still has tables
+    from an earlier version of QuickRail (different columns -- e.g. the old
+    email/password/Razorpay schema), inserts against the current models fail
+    with "column does not exist" errors on every single booking, since the
+    new columns (seat_assignments, is_split, waitlist_until, etc.) are
+    simply missing from the live table.
+
+    This patches any existing table so it has every column the current
+    models expect, without touching or dropping existing rows. Safe to run
+    on every startup -- it's a no-op once the schema is caught up.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector       = inspect(db.engine)
+    existing_tables = set(inspector.get_table_names())
+
+    for model in (User, SegmentBooking, Booking, WaitlistEntry):
+        table_name = model.__tablename__
+        if table_name not in existing_tables:
+            continue  # brand-new table -- db.create_all() already built it correctly
+
+        existing_cols = {c["name"] for c in inspector.get_columns(table_name)}
+
+        for col in model.__table__.columns:
+            if col.name in existing_cols:
+                continue
+            try:
+                ddl_type = col.type.compile(dialect=db.engine.dialect)
+                db.session.execute(text(
+                    f'ALTER TABLE {table_name} ADD COLUMN {col.name} {ddl_type}'
+                ))
+                db.session.commit()
+                print(f"[migration] Added missing column {table_name}.{col.name}")
+            except Exception as e:
+                db.session.rollback()
+                print(f"[migration] Could not add {table_name}.{col.name}: {e}")
+
+
 with app.app_context():
     db.create_all()
+    _run_light_migrations()
 
 
 # Any route NOT in this set is treated as an API endpoint for error-handling
@@ -526,17 +568,25 @@ def verify_otp():
     if otp != stored_otp:
         return jsonify({"success": False, "error": "Incorrect OTP."}), 400
 
-    del _otp_store[phone]   # one-time use
-
+    # OTP is valid. Do NOT consume it yet -- a brand-new phone number needs a
+    # second round-trip (this same endpoint, called again with `name` filled
+    # in) before the flow is actually complete. Deleting it here would
+    # invalidate that second call and break every new-user signup with
+    # "No OTP sent to this number."
     user = User.query.filter_by(phone=phone).first()
     if not user:
         if not name:
-            # New user — ask the frontend to collect the name
+            # New user -- ask the frontend to collect the name. OTP stays
+            # valid in the store until this call comes back with a name.
             return jsonify({"success": False, "needsName": True,
                             "message": "New user — please provide your name."})
         user = User(name=name, phone=phone)
         db.session.add(user)
         db.session.commit()
+
+    # Flow is complete (existing user logged in, or new user just created) --
+    # the OTP has done its job and can now be safely consumed.
+    del _otp_store[phone]
 
     session["user_id"]   = user.id
     session["user_name"] = user.name
