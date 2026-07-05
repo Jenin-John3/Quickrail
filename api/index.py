@@ -109,13 +109,20 @@ class Booking(db.Model):
     created_at     = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def to_dict(self):
+        date_label = self.travel_day
+        try:
+            date_label = datetime.datetime.strptime(self.travel_day, "%Y-%m-%d").strftime("%a, %d %b %Y")
+        except (ValueError, TypeError):
+            pass  # fall back to raw value (e.g. legacy weekday-name bookings)
+
         return {
             "pnr":            self.pnr,
             "trainName":      self.train_name,
             "trainId":        self.train_id,
             "from":           self.from_station,
             "to":             self.to_station,
-            "day":            self.travel_day,
+            "date":           self.travel_day,
+            "dateLabel":      date_label,
             "dep":            self.dep_time,
             "arr":            self.arr_time,
             "duration":       self.duration,
@@ -648,17 +655,64 @@ def logout():
 
 # ── Search ────────────────────────────────────────────────
 
+# ── Date helpers ──────────────────────────────────────────
+
+def _parse_iso_date(raw):
+    """
+    Parses a 'YYYY-MM-DD' string (what an <input type="date"> and JS
+    Date.toISOString().split('T')[0] both produce) into a date object.
+    Returns None if the string is missing or malformed.
+    """
+    if not raw:
+        return None
+    try:
+        return datetime.datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _validate_travel_date(raw):
+    """
+    Validates a travel date string for booking/search: must parse as
+    YYYY-MM-DD and must not be in the past. Returns (date_obj, error_msg).
+    error_msg is None on success.
+    """
+    d = _parse_iso_date(raw)
+    if d is None:
+        return None, "Please provide a valid travel date (YYYY-MM-DD)."
+    if d < datetime.date.today():
+        return None, "Travel date can't be in the past."
+    return d, None
+
+
+def _weekday_name(d):
+    return d.strftime("%A")
+
+
+def _fmt_date_label(raw):
+    """'2026-07-10' -> 'Fri, 10 Jul 2026' for display purposes."""
+    d = _parse_iso_date(raw)
+    if not d:
+        return raw or ""
+    return d.strftime("%a, %d %b %Y")
+
+
 @app.route("/search", methods=["POST"])
 def search():
     data    = request.get_json(silent=True) or {}
     u_from  = data.get("from", "")
     u_to    = data.get("to",   "")
-    u_day   = data.get("day",  "")
+    u_date  = data.get("date", "")
     u_class = data.get("seat_class", "SL")
     results = []
 
+    date_obj, err = _validate_travel_date(u_date)
+    if err:
+        return jsonify({"error": err}), 400
+    weekday = _weekday_name(date_obj)
+
     for t in TRAINS:
-        if u_day not in t["days"] and "Daily" not in t["days"]:
+        if weekday not in t["days"] and "Daily" not in t["days"]:
             continue
 
         stations = [r["station"] for r in t["route"]]
@@ -700,6 +754,9 @@ def search():
             "is_premium":  is_premium,
             "idx_from":    idx_from,
             "idx_to":      idx_to,
+            "date":        u_date,
+            "dateLabel":   _fmt_date_label(u_date),
+            "weekday":     weekday,
         })
 
     return jsonify(results)
@@ -738,18 +795,34 @@ def confirm_booking():
     data = request.get_json(silent=True) or {}
     booking_data = data.get("booking_data", {})
 
-    train_id   = booking_data.get("trainId")
-    travel_day = booking_data.get("day")
-    seat_class = booking_data.get("seatClass")
-    idx_from   = booking_data.get("idxFrom")
-    idx_to     = booking_data.get("idxTo")
+    train_id    = booking_data.get("trainId")
+    travel_date = booking_data.get("date")
+    seat_class  = booking_data.get("seatClass")
+    idx_from    = booking_data.get("idxFrom")
+    idx_to      = booking_data.get("idxTo")
 
-    if None in (train_id, travel_day, seat_class, idx_from, idx_to):
+    if None in (train_id, travel_date, seat_class, idx_from, idx_to):
         return jsonify({"success": False, "error": "Incomplete booking data."}), 400
+
+    date_obj, err = _validate_travel_date(travel_date)
+    if err:
+        return jsonify({"success": False, "error": err}), 400
 
     train = TRAIN_BY_ID.get(train_id)
     if not train:
         return jsonify({"success": False, "error": "Train not found."}), 404
+
+    weekday = _weekday_name(date_obj)
+    if weekday not in train["days"] and "Daily" not in train["days"]:
+        return jsonify({"success": False,
+                        "error": f"{train['name']} does not run on {weekday}s."}), 400
+
+    # travel_day is used internally throughout the seat-allocation logic as
+    # the per-day bucket key; it's now a real calendar date (YYYY-MM-DD)
+    # instead of a weekday name, so seats are correctly tracked per actual
+    # journey date rather than shared across every future occurrence of
+    # that weekday.
+    travel_day = travel_date
 
     pnr = "QR-" + str(random.randint(100000, 999999))
 
@@ -1019,17 +1092,20 @@ def _fake_live_status(train_id):
     first_dep = times[0]["dep"]
     last_arr  = times[-1]["arr"]
 
+    def fmt(dt):
+        return dt.strftime("%d %b %Y, %I:%M %p")
+
     if now < first_dep:
-        mins_to_dep = int((first_dep - now).total_seconds() // 60)
         return {
-            "status":  "not_departed",
-            "message": f"Departs {route[0]['station']} in {mins_to_dep} min "
-                       f"(at {route[0]['dep']})",
+            "status":   "not_departed",
+            "depTime":  fmt(first_dep),
+            "message":  f"Scheduled to depart {route[0]['station']} on {fmt(first_dep)}",
         }
     if now > last_arr:
         return {
-            "status":  "arrived",
-            "message": f"Arrived at {route[-1]['station']}",
+            "status":   "arrived",
+            "arrTime":  fmt(last_arr),
+            "message":  f"Arrived at {route[-1]['station']} on {fmt(last_arr)}",
         }
 
     # Find which segment the train is currently in
@@ -1040,7 +1116,6 @@ def _fake_live_status(train_id):
             elapsed   = (now - dep_cur).total_seconds()
             total_seg = (arr_nxt - dep_cur).total_seconds()
             pct       = elapsed / total_seg if total_seg else 0
-            mins_eta  = int((arr_nxt - now).total_seconds() // 60)
             from_s    = route[i]["station"]
             to_s      = route[i + 1]["station"]
             return {
@@ -1048,16 +1123,18 @@ def _fake_live_status(train_id):
                 "from":     from_s,
                 "to":       to_s,
                 "progress": round(pct * 100),
-                "etaMins":  mins_eta,
-                "message":  f"Between {from_s} and {to_s} — "
-                            f"ETA {to_s}: {mins_eta} min",
+                "etaTime":  fmt(arr_nxt),
+                "message":  f"Currently between {from_s} and {to_s} — "
+                            f"expected to reach {to_s} at {fmt(arr_nxt)}",
             }
         # Train is at a station (between arr and dep)
         if times[i]["arr"] <= now <= times[i]["dep"]:
+            dep_here = times[i]["dep"]
             return {
-                "status":  "at_station",
-                "station": route[i]["station"],
-                "message": f"At {route[i]['station']} — departs soon",
+                "status":   "at_station",
+                "station":  route[i]["station"],
+                "depTime":  fmt(dep_here),
+                "message":  f"Currently at {route[i]['station']} — departs at {fmt(dep_here)}",
             }
 
     return {"status": "unknown", "message": "Status unavailable"}
@@ -1089,26 +1166,59 @@ CLASS_ALIASES = {
     "executive": "EC", "ec": "EC", "exec": "EC",
 }
 
-DAY_ALIASES = {
-    "mon": "Monday", "monday": "Monday",
-    "tue": "Tuesday", "tuesday": "Tuesday",
-    "wed": "Wednesday", "wednesday": "Wednesday",
-    "thu": "Thursday", "thursday": "Thursday",
-    "fri": "Friday", "friday": "Friday",
-    "sat": "Saturday", "saturday": "Saturday",
-    "sun": "Sunday", "sunday": "Sunday",
-    "today": None,   # resolved at runtime
-    "tomorrow": None,
+WEEKDAY_NAME_TO_INDEX = {
+    "monday": 0, "mon": 0, "tuesday": 1, "tue": 1, "wednesday": 2, "wed": 2,
+    "thursday": 3, "thu": 3, "friday": 4, "fri": 4,
+    "saturday": 5, "sat": 5, "sunday": 6, "sun": 6,
 }
 
 
-def _resolve_day(word):
-    w = word.lower().strip()
-    if w == "today":
-        return datetime.datetime.now().strftime("%A")
-    if w == "tomorrow":
-        return (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%A")
-    return DAY_ALIASES.get(w)
+def _next_date_for_weekday(weekday_index):
+    """Next calendar date (today counts) that falls on the given weekday."""
+    today = datetime.date.today()
+    delta = (weekday_index - today.weekday()) % 7
+    return today + datetime.timedelta(days=delta)
+
+
+def _resolve_date_from_text(text):
+    """
+    Parses natural-language date references from a chat message into a real
+    'YYYY-MM-DD' string:
+      - "today" / "tomorrow"
+      - weekday names ("Friday") -> the NEXT occurrence of that weekday
+      - explicit dates: DD/MM/YYYY, DD-MM-YYYY, or YYYY-MM-DD
+    Returns None if nothing recognizable is found.
+    """
+    t = text.lower()
+
+    if "today" in t:
+        return datetime.date.today().isoformat()
+    if "tomorrow" in t:
+        return (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+
+    # Explicit DD/MM/YYYY or DD-MM-YYYY
+    m = re.search(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b", text)
+    if m:
+        dd, mm, yyyy = map(int, m.groups())
+        try:
+            return datetime.date(yyyy, mm, dd).isoformat()
+        except ValueError:
+            pass
+
+    # Explicit YYYY-MM-DD
+    m = re.search(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", text)
+    if m:
+        yyyy, mm, dd = map(int, m.groups())
+        try:
+            return datetime.date(yyyy, mm, dd).isoformat()
+        except ValueError:
+            pass
+
+    for alias, idx in WEEKDAY_NAME_TO_INDEX.items():
+        if alias in t:
+            return _next_date_for_weekday(idx).isoformat()
+
+    return None
 
 
 def _extract_station(text):
@@ -1127,19 +1237,13 @@ def _extract_class(text):
     return None
 
 
-def _extract_day(text):
-    t = text.lower()
-    for alias in DAY_ALIASES:
-        if alias in t:
-            return _resolve_day(alias)
-    return None
-
-
-def _search_trains_for_chat(from_s, to_s, day, seat_class):
+def _search_trains_for_chat(from_s, to_s, travel_date, seat_class):
     """Returns list of matching trains (same logic as /search)."""
     results = []
+    date_obj = _parse_iso_date(travel_date)
+    weekday  = _weekday_name(date_obj) if date_obj else None
     for t in TRAINS:
-        if day not in t["days"] and "Daily" not in t["days"]:
+        if weekday not in t["days"] and "Daily" not in t["days"]:
             continue
         stations = [r["station"] for r in t["route"]]
         if from_s not in stations or to_s not in stations:
@@ -1264,7 +1368,7 @@ def chat():
         # Try to pre-fill as much as possible from the first message
         frm   = _extract_station(msg)
         to    = _extract_station(msg.replace(frm.lower() if frm else "", "", 1)) if frm else None
-        day   = _extract_day(msg)
+        date  = _resolve_date_from_text(msg)
         cls   = _extract_class(msg)
 
         # if both stations present but same → ignore
@@ -1275,7 +1379,7 @@ def chat():
             "step":  "idle",
             "from":  frm,
             "to":    to,
-            "day":   day,
+            "date":  date,
             "class": cls or "SL",
         }
 
@@ -1289,15 +1393,15 @@ def chat():
             state["step"] = "ask_to"
             session[_CHAT_KEY] = state
             return jsonify({"reply": f"Got it — from <b>{state['from']}</b>. Where are you going <b>to</b>?"})
-        if not state["day"]:
-            state["step"] = "ask_day"
+        if not state["date"]:
+            state["step"] = "ask_date"
             session[_CHAT_KEY] = state
-            return jsonify({"reply": f"<b>{state['from']} → {state['to']}</b>. Which day?<br>"
-                            "<small>Monday · Tuesday · Wednesday … or just say 'today' / 'tomorrow'</small>"})
+            return jsonify({"reply": f"<b>{state['from']} → {state['to']}</b>. What date are you travelling?<br>"
+                            "<small>e.g. 'today', 'tomorrow', 'Friday', or 10/07/2026</small>"})
 
         state["step"] = "ask_class"
         session[_CHAT_KEY] = state
-        return jsonify({"reply": f"Almost there — <b>{state['from']} → {state['to']}</b> on <b>{state['day']}</b>.<br>"
+        return jsonify({"reply": f"Almost there — <b>{state['from']} → {state['to']}</b> on <b>{_fmt_date_label(state['date'])}</b>.<br>"
                         "Which seat class? <small>SL · 3A · 2A · CC · EC</small>"})
 
     # ── ask_from ──
@@ -1319,25 +1423,22 @@ def chat():
         if to == state.get("from"):
             return jsonify({"reply": "Origin and destination can't be the same. Where are you going?"})
         state["to"]   = to
-        state["step"] = "ask_day"
+        state["step"] = "ask_date"
         session[_CHAT_KEY] = state
-        return jsonify({"reply": f"<b>{state['from']} → {to}</b>. Which day of travel?"})
+        return jsonify({"reply": f"<b>{state['from']} → {to}</b>. What date are you travelling?<br>"
+                        "<small>e.g. 'today', 'tomorrow', 'Friday', or 10/07/2026</small>"})
 
-    # ── ask_day ──
-    if state["step"] == "ask_day":
-        day = _extract_day(msg)
-        if not day:
-            # Try direct match
-            for d in ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]:
-                if d.lower() in msg_l:
-                    day = d
-                    break
-        if not day:
-            return jsonify({"reply": "Please tell me the day — e.g. Monday, Friday, or 'today'."})
-        state["day"]  = day
+    # ── ask_date ──
+    if state["step"] == "ask_date":
+        date = _resolve_date_from_text(msg)
+        _, date_err = _validate_travel_date(date) if date else (None, "unparsed")
+        if date_err:
+            return jsonify({"reply": "Please give me a valid future date — e.g. 'today', 'tomorrow', "
+                            "'Friday', or 10/07/2026."})
+        state["date"] = date
         state["step"] = "ask_class"
         session[_CHAT_KEY] = state
-        return jsonify({"reply": f"Day: <b>{day}</b>. Which seat class?<br>"
+        return jsonify({"reply": f"Date: <b>{_fmt_date_label(date)}</b>. Which seat class?<br>"
                         "<small>SL (Sleeper) · 3A (AC 3-Tier) · 2A (AC 2-Tier) · CC (Chair Car) · EC (Exec. Chair)</small>"})
 
     # ── ask_class ──
@@ -1349,11 +1450,11 @@ def chat():
         state["step"]  = "pick_train"
         session[_CHAT_KEY] = state
 
-        trains = _search_trains_for_chat(state["from"], state["to"], state["day"], cls)
+        trains = _search_trains_for_chat(state["from"], state["to"], state["date"], cls)
         if not trains:
             session[_CHAT_KEY] = {"step": "idle"}
             return jsonify({"reply": f"No trains found for <b>{state['from']} → {state['to']}</b> "
-                            f"on <b>{state['day']}</b>. Try a different day or route."})
+                            f"on <b>{_fmt_date_label(state['date'])}</b>. Try a different date or route."})
 
         state["trains"] = trains
         session[_CHAT_KEY] = state
@@ -1414,7 +1515,7 @@ def chat():
         return jsonify({"reply":
             f"<b>Booking summary:</b><br>"
             f"🚆 {t['name']} ({t['id']})<br>"
-            f"📍 {state['from']} → {state['to']} · {state['day']}<br>"
+            f"📍 {state['from']} → {state['to']} · {_fmt_date_label(state['date'])}<br>"
             f"⏱ {t['dep']} → {t['arr']} ({t['duration']})<br>"
             f"🪑 {t['classLabel']} · ₹{t['fare']}<br>"
             f"👤 {state['pax_name']} · {state['pax_phone']} · {dob}<br><br>"
@@ -1431,7 +1532,7 @@ def chat():
             t      = state["train"]
             pnr    = "QR-" + str(random.randint(100000, 999999))
             alloc  = find_seats_for_range(
-                t["id"], state["day"], t["seatClass"],
+                t["id"], state["date"], t["seatClass"],
                 t["idxFrom"], t["idxTo"]
             )
 
@@ -1442,7 +1543,7 @@ def chat():
                     pnr=pnr, user_id=session["user_id"],
                     train_id=t["id"], train_name=t["name"],
                     from_station=state["from"], to_station=state["to"],
-                    travel_day=state["day"],
+                    travel_day=state["date"],
                     dep_time=t["dep"], arr_time=t["arr"], duration=t["duration"],
                     seat_class=t["seatClass"], class_label=t["classLabel"],
                     fare=t["fare"],
@@ -1455,7 +1556,7 @@ def chat():
                 db.session.add(booking)
                 entry = WaitlistEntry(
                     pnr=pnr, user_id=session["user_id"],
-                    train_id=t["id"], travel_day=state["day"],
+                    train_id=t["id"], travel_day=state["date"],
                     seat_class=t["seatClass"],
                     start_idx=t["idxFrom"], end_idx=t["idxTo"],
                     expires_at=expires,
@@ -1474,7 +1575,7 @@ def chat():
             parts      = []
             for (seat_num, seg_s, seg_e) in alloc:
                 sb = SegmentBooking(
-                    pnr=pnr, train_id=t["id"], travel_day=state["day"],
+                    pnr=pnr, train_id=t["id"], travel_day=state["date"],
                     seat_class=t["seatClass"], seat_number=seat_num,
                     start_idx=seg_s, end_idx=seg_e,
                 )
@@ -1490,7 +1591,7 @@ def chat():
                 pnr=pnr, user_id=session["user_id"],
                 train_id=t["id"], train_name=t["name"],
                 from_station=state["from"], to_station=state["to"],
-                travel_day=state["day"],
+                travel_day=state["date"],
                 dep_time=t["dep"], arr_time=t["arr"], duration=t["duration"],
                 seat_class=t["seatClass"], class_label=t["classLabel"],
                 fare=t["fare"],

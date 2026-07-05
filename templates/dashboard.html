@@ -227,12 +227,8 @@
                 </select>
             </div>
             <div>
-                <label class="field-label">Day</label>
-                <select id="day">
-                    <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
-                    <option>Thursday</option><option>Friday</option>
-                    <option>Saturday</option><option>Sunday</option>
-                </select>
+                <label class="field-label">Travel Date</label>
+                <input type="date" id="travelDate">
             </div>
             <div>
                 <label class="field-label">Seat Class</label>
@@ -456,6 +452,14 @@
         const name = USER_NAME || "User";
         document.getElementById("user-name-display").textContent = name;
         document.getElementById("user-avatar").textContent = name.charAt(0).toUpperCase();
+    })();
+
+    /* ── Travel date defaults ─────────────────────── */
+    (function () {
+        const todayISO = new Date().toISOString().split("T")[0];
+        const dateInput = document.getElementById("travelDate");
+        dateInput.min = todayISO;
+        dateInput.value = todayISO;
     })();
 
     /* ── Class hints ──────────────────────────────── */

@@ -28,11 +28,12 @@ function classPill(code) {
 async function findTrains() {
     const from      = document.getElementById("fromStat").value;
     const to        = document.getElementById("toStat").value;
-    const day       = document.getElementById("day").value;
+    const date      = document.getElementById("travelDate").value;
     const seatClass = document.getElementById("seatClass").value;
     const resDiv    = document.getElementById("results");
 
     if (from === to) { showToast("Origin and destination must be different.", "danger"); return; }
+    if (!date) { showToast("Please choose a travel date.", "danger"); return; }
 
     resDiv.innerHTML = `
         <div style="text-align:center;padding:5rem 0;">
@@ -45,11 +46,11 @@ async function findTrains() {
         const res  = await fetch("/search", {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ from, to, day, seat_class: seatClass })
+            body:    JSON.stringify({ from, to, date, seat_class: seatClass })
         });
         const data = await res.json();
 
-        searchResults = data.map(t => ({ ...t, from, to, day }));
+        searchResults = data.map(t => ({ ...t, from, to, date }));
         resDiv.innerHTML = "";
 
         if (!searchResults.length) {
@@ -60,9 +61,9 @@ async function findTrains() {
                        style="margin-bottom:1.1rem;opacity:.42;color:var(--text-muted);"></i>
                     <p style="font-weight:700;margin-bottom:.4rem;color:var(--text-main);">No trains found</p>
                     <p style="font-size:.81rem;">
-                        No trains between ${from} and ${to} on ${day},
+                        No trains between ${from} and ${to} on ${fmtDateLabel(date)},
                         or none offer ${CLASS_META[seatClass]?.label || seatClass}.
-                        Try a different day or class.
+                        Try a different date or class.
                     </p>
                 </div>`;
             lucide.createIcons();
@@ -73,7 +74,7 @@ async function findTrains() {
             `<div style="font-size:.7rem;color:var(--text-muted);font-weight:700;` +
             `text-transform:uppercase;letter-spacing:1.5px;margin-bottom:1rem;">` +
             `${searchResults.length} train${searchResults.length > 1 ? "s" : ""} &nbsp;&middot;&nbsp; ` +
-            `${from} &rarr; ${to} &nbsp;&middot;&nbsp; ${day}</div>`;
+            `${from} &rarr; ${to} &nbsp;&middot;&nbsp; ${fmtDateLabel(date)}</div>`;
 
         searchResults.forEach((t, i) => {
             const card = document.createElement("div");
@@ -133,7 +134,7 @@ function openBookingModal(idx) {
         selectedTrain.name + "  #" + selectedTrain.id;
     document.getElementById("modal-route").innerText =
         selectedTrain.from + "  \u2192  " + selectedTrain.to +
-        "  \u00B7  " + selectedTrain.day;
+        "  \u00B7  " + (selectedTrain.dateLabel || fmtDateLabel(selectedTrain.date));
     document.getElementById("modal-class-pill").innerHTML =
         classPill(selectedTrain.seat_class);
     document.getElementById("fare-display").innerText = "\u20B90";
@@ -156,40 +157,62 @@ function openBookingModal(idx) {
      partial   — booked for a different segment, free for this one
      taken     — conflicts with the requested range
 ══════════════════════════════════════════════════════════ */
+/* ── Coach layout definitions ─────────────────────────────
+   Mirrors real Indian Railways bay/row patterns for each class, matching
+   the seat totals the backend already uses (SL=72, 3A=64, 2A=48, CC=78,
+   EC=56). Berth classes are laid out bay-by-bay (facing main berths +
+   side berths across the aisle); chair classes are laid out row-by-row
+   with a center aisle gap. */
+const BERTH_PATTERNS = {
+    SL:  ["LB", "MB", "UB", "LB", "MB", "UB", "SLB", "SUB"],   // bay of 8
+    "3A":["LB", "MB", "UB", "LB", "MB", "UB", "SLB", "SUB"],   // bay of 8
+    "2A":["LB", "UB", "LB", "UB", "SLB", "SUB"],                // bay of 6
+};
+const CHAIR_LAYOUT = {
+    CC: { left: 3, right: 2 },   // 3+2 seating
+    EC: { left: 2, right: 2 },   // 2+2 seating
+};
+
+function isBerthClass(code) { return code in BERTH_PATTERNS; }
+
 async function buildSeatGrid() {
     const grid = document.getElementById("seat-grid");
     grid.innerHTML =
-        `<div style="grid-column:1/-1;text-align:center;padding:1.75rem 0;
+        `<div style="text-align:center;padding:1.75rem 0;
              color:var(--text-muted);font-size:.8rem;">
              <div class="spinner" style="width:26px;height:26px;border-width:2px;margin:0 auto .75rem;"></div>
              Loading seats&hellip;
          </div>`;
 
     try {
-        const url = `/seats/${selectedTrain.id}/${encodeURIComponent(selectedTrain.day)}` +
+        const url = `/seats/${selectedTrain.id}/${encodeURIComponent(selectedTrain.date)}` +
             `?class=${selectedTrain.seat_class}&idx_from=${selectedTrain.idx_from}&idx_to=${selectedTrain.idx_to}`;
         const res  = await fetch(url);
         const data = await res.json();
         const statuses    = data.statuses    || {};
         const totalSeats  = data.totalSeats  || 24;
         const routeLabels = data.routeLabels || [];
+        const seatClass   = selectedTrain.seat_class;
 
-        grid.innerHTML = "";
-        for (let i = 1; i <= totalSeats; i++) {
-            const info   = statuses[i] || statuses[String(i)] || { status: "available", bookedSegments: [] };
+        const getInfo = (i) => statuses[i] || statuses[String(i)] || { status: "available", bookedSegments: [] };
+
+        const makeSeatEl = (i, extraClass, innerHTML) => {
+            const info   = getInfo(i);
             const status = info.status;
             const seat   = document.createElement("div");
-            seat.className = "seat " + status;
-            seat.innerHTML =
-                `<span style="font-size:.49rem;opacity:.5;display:block;margin-bottom:1px;">S</span>${i}`;
+            seat.className = "seat " + extraClass + " " + status;
+            seat.innerHTML = innerHTML;
+
+            const segLabels = (info.bookedSegments && info.bookedSegments.length)
+                ? info.bookedSegments.map(([s, e]) =>
+                      (routeLabels[s] || "?") + "\u2192" + (routeLabels[e] || "?")
+                  ).join(", ")
+                : null;
+            if (segLabels) {
+                seat.title = (status === "taken" ? "Booked for: " : "Also booked for: ") + segLabels;
+            }
 
             if (status !== "taken") {
-                if (info.bookedSegments && info.bookedSegments.length) {
-                    const segLabels = info.bookedSegments.map(([s, e]) =>
-                        (routeLabels[s] || "?") + "\u2192" + (routeLabels[e] || "?")
-                    ).join(", ");
-                    seat.title = "Also booked for: " + segLabels;
-                }
                 seat.onclick = () => {
                     document.querySelectorAll(".seat").forEach(s => s.classList.remove("selected"));
                     seat.classList.add("selected");
@@ -198,20 +221,93 @@ async function buildSeatGrid() {
                         segStart: selectedTrain.idx_from,
                         segEnd:   selectedTrain.idx_to,
                     }];
-                    document.getElementById("fare-display").innerText =
-                        "\u20B9" + selectedTrain.fare;
+                    document.getElementById("fare-display").innerText = "\u20B9" + selectedTrain.fare;
                 };
-            } else if (info.bookedSegments && info.bookedSegments.length) {
-                const segLabels = info.bookedSegments.map(([s, e]) =>
-                    (routeLabels[s] || "?") + "\u2192" + (routeLabels[e] || "?")
-                ).join(", ");
-                seat.title = "Booked for: " + segLabels;
             }
-            grid.appendChild(seat);
+            return seat;
+        };
+
+        grid.innerHTML = "";
+        const coach = document.createElement("div");
+        coach.className = "coach-map";
+        coach.innerHTML = `<div class="coach-direction">
+            <i data-lucide="arrow-left-circle" size="12"></i> Engine end
+        </div>`;
+
+        if (isBerthClass(seatClass)) {
+            const pattern = BERTH_PATTERNS[seatClass];
+            const baySize = pattern.length;
+            const bayGrid = document.createElement("div");
+            bayGrid.className = "bay-grid";
+
+            for (let bayStart = 1; bayStart <= totalSeats; bayStart += baySize) {
+                const bay = document.createElement("div");
+                bay.className = "bay";
+
+                const mainCount = baySize === 8 ? 3 : 2;   // seats per facing column
+                const colA = document.createElement("div"); colA.className = "bay-col";
+                const colB = document.createElement("div"); colB.className = "bay-col";
+                const colSide = document.createElement("div"); colSide.className = "bay-col";
+
+                for (let p = 0; p < baySize; p++) {
+                    const seatNum = bayStart + p;
+                    if (seatNum > totalSeats) break;
+                    const type = pattern[p];
+                    const el = makeSeatEl(seatNum, "berth",
+                        `${seatNum}<span class="berth-type">${type}</span>`);
+                    if (p < mainCount) colA.appendChild(el);
+                    else if (p < mainCount * 2) colB.appendChild(el);
+                    else colSide.appendChild(el);
+                }
+
+                const aisle = document.createElement("div"); aisle.className = "bay-aisle";
+                bay.appendChild(colA);
+                bay.appendChild(colB);
+                bay.appendChild(aisle);
+                bay.appendChild(colSide);
+                bayGrid.appendChild(bay);
+            }
+            coach.appendChild(bayGrid);
+
+        } else {
+            const layout   = CHAIR_LAYOUT[seatClass] || { left: 3, right: 2 };
+            const rowSize  = layout.left + layout.right;
+            const rowsWrap = document.createElement("div");
+            rowsWrap.className = "chair-rows";
+            let rowNum = 1;
+
+            for (let rowStart = 1; rowStart <= totalSeats; rowStart += rowSize) {
+                const row = document.createElement("div");
+                row.className = "chair-row";
+
+                const rowLabel = document.createElement("div");
+                rowLabel.className = "chair-row-num";
+                rowLabel.textContent = rowNum++;
+                row.appendChild(rowLabel);
+
+                const leftGroup  = document.createElement("div"); leftGroup.className  = "chair-group";
+                const rightGroup = document.createElement("div"); rightGroup.className = "chair-group";
+
+                for (let p = 0; p < rowSize; p++) {
+                    const seatNum = rowStart + p;
+                    if (seatNum > totalSeats) break;
+                    const el = makeSeatEl(seatNum, "chair", String(seatNum));
+                    if (p < layout.left) leftGroup.appendChild(el);
+                    else rightGroup.appendChild(el);
+                }
+                row.appendChild(leftGroup);
+                row.appendChild(rightGroup);
+                rowsWrap.appendChild(row);
+            }
+            coach.appendChild(rowsWrap);
         }
+
+        grid.appendChild(coach);
+        lucide.createIcons();
+
     } catch {
         grid.innerHTML =
-            `<div style="grid-column:1/-1;text-align:center;padding:1.5rem;
+            `<div style="text-align:center;padding:1.5rem;
                  color:var(--danger);font-size:.8rem;">
                  Could not load seats. Please close and try again.
              </div>`;
@@ -286,7 +382,7 @@ async function processBooking() {
         trainName:  selectedTrain.name,
         from:       selectedTrain.from,
         to:         selectedTrain.to,
-        day:        selectedTrain.day,
+        date:       selectedTrain.date,
         dep:        selectedTrain.dep,
         arr:        selectedTrain.arr,
         duration:   selectedTrain.duration,
@@ -420,7 +516,7 @@ function eticketHTML(b) {
                         <span style="color:${accent};font-size:.88rem;">&rsaquo;</span>
                         <div style="flex:1;height:1px;background:var(--border);"></div>
                     </div>
-                    <div style="font-size:.58rem;color:var(--text-muted);">${b.day || ""}</div>
+                    <div style="font-size:.58rem;color:var(--text-muted);">${b.dateLabel || b.date || ""}</div>
                 </div>
                 <div style="text-align:right;">
                     <div style="font-size:1.15rem;font-weight:800;color:var(--text-main);">${to}</div>
@@ -579,6 +675,7 @@ async function showJourneys() {
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         <span style="color:var(--text-muted);font-size:.7rem;font-weight:600;">
                             ${b.from || "\u2014"} &rarr; ${b.to || "\u2014"}
+                            &nbsp;&middot;&nbsp; ${b.dateLabel || b.date || ""}
                             &nbsp;&middot;&nbsp; ${seatText}
                         </span>
                         ${classPill(b.seatClass || "SL")}
@@ -703,6 +800,15 @@ async function checkLiveStatus() {
                 </div>`;
         }
 
+        const timeField = data.etaTime || data.depTime || data.arrTime;
+        const timeLine = timeField ? `
+                <div style="margin-top:.9rem;display:inline-flex;align-items:center;gap:6px;
+                            padding:.5rem .85rem;border-radius:10px;background:var(--primary-soft);
+                            border:1px solid var(--primary-soft-2);color:var(--primary-strong);
+                            font-weight:700;font-size:.8rem;">
+                    <i data-lucide="calendar-clock" size="14"></i> ${timeField}
+                </div>` : "";
+
         resDiv.innerHTML = `
             <div class="glass-card" style="padding:1.6rem;">
                 <div class="live-card">
@@ -713,6 +819,7 @@ async function checkLiveStatus() {
                             <span style="font-weight:800;font-size:.98rem;color:var(--text-main);">Train ${trainId}</span>
                         </div>
                         <p style="color:var(--text-dim);font-size:.85rem;">${data.message}</p>
+                        ${timeLine}
                     </div>
                 </div>
                 ${progressBar}
@@ -735,6 +842,15 @@ function fmtDOB(val) {
     if (!val) return "\u2014";
     const [y, m, d] = val.split("-");
     return d + "/" + m + "/" + y;
+}
+
+function fmtDateLabel(iso) {
+    if (!iso) return "\u2014";
+    const d = new Date(iso + "T00:00:00");
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString("en-GB", {
+        weekday: "short", day: "2-digit", month: "short", year: "numeric"
+    }).replace(/,/, ",");
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
